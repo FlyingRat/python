@@ -43,9 +43,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #11131: Fix sign of zero in plus and minus operations when
-  the context rounding mode is ROUND_FLOOR.
-
 - Issue #5622: Fix curses.wrapper to raise correct exception if curses
   initialization fails.
 
@@ -253,6 +250,9 @@ Build
 
 Tests
 -----
+
+- Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
+  false positive if the last directory in the path is inaccessible.
 
 - Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
   by Ross Lagerwall.
