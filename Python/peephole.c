@@ -535,8 +535,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 }
                 if (codestr[i+3] != UNPACK_SEQUENCE  ||
                     !ISBASICBLOCK(blocks,i,6) ||
-                    j != GETARG(codestr, i+3) ||
-                    opcode == BUILD_SET)
+                    j != GETARG(codestr, i+3))
                     continue;
                 if (j == 1) {
                     memset(codestr+i, NOP, 6);
