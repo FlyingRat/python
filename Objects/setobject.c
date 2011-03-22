@@ -365,12 +365,11 @@ set_add_entry(register PySetObject *so, setentry *entry)
 {
     register Py_ssize_t n_used;
     PyObject *key = entry->key;
-    Py_hash_t hash = entry->hash;
 
     assert(so->fill <= so->mask);  /* at least one empty slot */
     n_used = so->used;
     Py_INCREF(key);
-    if (set_insert_key(so, key, hash) == -1) {
+    if (set_insert_key(so, key, entry->hash) == -1) {
         Py_DECREF(key);
         return -1;
     }
@@ -640,7 +639,6 @@ set_merge(PySetObject *so, PyObject *otherset)
 {
     PySetObject *other;
     PyObject *key;
-    Py_hash_t hash;
     register Py_ssize_t i;
     register setentry *entry;
 
@@ -662,11 +660,10 @@ set_merge(PySetObject *so, PyObject *otherset)
     for (i = 0; i <= other->mask; i++) {
         entry = &other->table[i];
         key = entry->key;
-        hash = entry->hash;
         if (key != NULL &&
             key != dummy) {
             Py_INCREF(key);
-            if (set_insert_key(so, key, hash) == -1) {
+            if (set_insert_key(so, key, entry->hash) == -1) {
                 Py_DECREF(key);
                 return -1;
             }

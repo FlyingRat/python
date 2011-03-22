@@ -2136,7 +2136,7 @@ class ftpwrapper:
             # Try to retrieve as a file
             try:
                 cmd = 'RETR ' + file
-                conn, retrlen = self.ftp.ntransfercmd(cmd)
+                conn = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
                     raise URLError('ftp error', reason).with_traceback(
@@ -2157,14 +2157,10 @@ class ftpwrapper:
                 cmd = 'LIST ' + file
             else:
                 cmd = 'LIST'
-            conn, retrlen = self.ftp.ntransfercmd(cmd)
+            conn = self.ftp.ntransfercmd(cmd)
         self.busy = 1
-
-        ftpobj = addclosehook(conn.makefile('rb'), self.endtransfer)
-        conn.close()
         # Pass back both a suitably decorated object and a retrieval length
-        return (ftpobj, retrlen)
-
+        return (addclosehook(conn[0].makefile('rb'), self.endtransfer), conn[1])
     def endtransfer(self):
         if not self.busy:
             return
