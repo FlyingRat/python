@@ -219,23 +219,20 @@ class RemoteIMAPTest(unittest.TestCase):
 
     def tearDown(self):
         if self.server is not None:
-            with transient_internet(self.host):
-                self.server.logout()
+            self.server.logout()
 
     def test_logincapa(self):
-        with transient_internet(self.host):
-            for cap in self.server.capabilities:
-                self.assertIsInstance(cap, str)
-            self.assertTrue('LOGINDISABLED' in self.server.capabilities)
-            self.assertTrue('AUTH=ANONYMOUS' in self.server.capabilities)
-            rs = self.server.login(self.username, self.password)
-            self.assertEqual(rs[0], 'OK')
+        for cap in self.server.capabilities:
+            self.assertIsInstance(cap, str)
+        self.assertTrue('LOGINDISABLED' in self.server.capabilities)
+        self.assertTrue('AUTH=ANONYMOUS' in self.server.capabilities)
+        rs = self.server.login(self.username, self.password)
+        self.assertEqual(rs[0], 'OK')
 
     def test_logout(self):
-        with transient_internet(self.host):
-            rs = self.server.logout()
-            self.server = None
-            self.assertEqual(rs[0], 'BYE')
+        rs = self.server.logout()
+        self.server = None
+        self.assertEqual(rs[0], 'BYE')
 
 
 @unittest.skipUnless(ssl, "SSL not available")
@@ -243,9 +240,8 @@ class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
     def setUp(self):
         super().setUp()
-        with transient_internet(self.host):
-            rs = self.server.starttls()
-            self.assertEqual(rs[0], 'OK')
+        rs = self.server.starttls()
+        self.assertEqual(rs[0], 'OK')
 
     def test_logincapa(self):
         for cap in self.server.capabilities:
