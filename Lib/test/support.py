@@ -1389,8 +1389,9 @@ def args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
-    for opt in sys.warnoptions:
-        args.append('-W' + opt)
+        if sys.warnoptions:
+            args.append('-W')
+            args.extend(sys.warnoptions)
     return args
 
 #============================================================

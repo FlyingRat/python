@@ -42,9 +42,6 @@ Selecting tests
                 -- specify which special resource intensive tests to run
 -M/--memlimit LIMIT
                 -- run very large memory-consuming tests
-   --testdir DIR
-                -- execute test files in the specified directory (instead
-                   of the Python stdlib test suite)
 
 Special runs
 
@@ -268,7 +265,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
-             'start=', 'nowindows', 'header', 'testdir='])
+             'start=', 'nowindows', 'header'])
     except getopt.error as msg:
         usage(msg)
 
@@ -318,9 +315,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-T', '--coverage'):
             trace = True
         elif o in ('-D', '--coverdir'):
-            # CWD is replaced with a temporary dir before calling main(), so we
-            # need  join it with the saved CWD so it goes where the user expects.
-            coverdir = os.path.join(support.SAVEDCWD, a)
+            coverdir = os.path.join(os.getcwd(), a)
         elif o in ('-N', '--nocoverdir'):
             coverdir = None
         elif o in ('-R', '--huntrleaks'):
@@ -379,13 +374,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             forever = True
         elif o in ('-j', '--multiprocess'):
             use_mp = int(a)
-            if use_mp <= 0:
-                try:
-                    import multiprocessing
-                    # Use all cores + extras for tests that like to sleep
-                    use_mp = 2 + multiprocessing.cpu_count()
-                except (ImportError, NotImplementedError):
-                    use_mp = 3
         elif o == '--header':
             header = True
         elif o == '--slaveargs':
@@ -398,10 +386,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print()   # Force a newline (just in case)
             print(json.dumps(result))
             sys.exit(0)
-        elif o == '--testdir':
-            # CWD is replaced with a temporary dir before calling main(), so we
-            # join it with the saved CWD so it ends up where the user expects.
-            testdir = os.path.join(support.SAVEDCWD, a)
         else:
             print(("No handler for option {}.  Please report this as a bug "
                    "at http://bugs.python.org.").format(o), file=sys.stderr)
@@ -476,13 +460,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print("==  ", os.getcwd())
         print("Testing with flags:", sys.flags)
 
-    # if testdir is set, then we are not running the python tests suite, so
-    # don't add default tests to be executed or skipped (pass empty values)
-    if testdir:
-        alltests = findtests(testdir, list(), set())
-    else:
-        alltests = findtests(testdir, stdtests, nottests)
-
+    alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
     if single:
         selected = selected[:1]
@@ -557,7 +535,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 args_tuple = (
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
-                         debug=debug, rerun_failed=verbose3)
+                        debug=debug)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -631,9 +609,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet, huntrleaks, debug,
-                                     rerun_failed=verbose3)
+                    result = runtest(test, verbose, quiet, huntrleaks, debug)
                     accumulate_result(test, result)
+                    if verbose3 and result[0] == FAILED:
+                        print("Re-running test {} in verbose mode".format(test))
+                        runtest(test, True, quiet, huntrleaks, debug)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -728,8 +708,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     sys.exit(len(bad) > 0 or interrupted)
 
 
-# small set of tests to determine if we have a basically functioning interpreter
-# (i.e. if any of these fail, then anything else is likely to follow)
 STDTESTS = [
     'test_grammar',
     'test_opcodes',
@@ -742,8 +720,10 @@ STDTESTS = [
     'test_doctest2',
 ]
 
-# set of tests that we don't want to be executed when using regrtest
-NOTTESTS = set()
+NOTTESTS = {
+    'test_future1',
+    'test_future2',
+}
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
@@ -778,8 +758,7 @@ def replace_stdout():
     atexit.register(restore_stdout)
 
 def runtest(test, verbose, quiet,
-            huntrleaks=False, debug=False, use_resources=None,
-            rerun_failed=False):
+            huntrleaks=False, debug=False, use_resources=None):
     """Run a single test.
 
     test -- the name of the test
@@ -788,7 +767,6 @@ def runtest(test, verbose, quiet,
     test_times -- a list of (time, test_name) pairs
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
-    rerun_failed -- if true, re-run in verbose mode when failed
 
     Returns one of the test result constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
@@ -803,14 +781,7 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         support.use_resources = use_resources
     try:
-        result = runtest_inner(test, verbose, quiet, huntrleaks, debug)
-        if result[0] == FAILED and rerun_failed:
-            cleanup_test_droppings(test, verbose)
-            sys.stdout.flush()
-            sys.stderr.flush()
-            print("Re-running test {} in verbose mode".format(test))
-            runtest(test, True, quiet, huntrleaks, debug)
-        return result
+        return runtest_inner(test, verbose, quiet, huntrleaks, debug)
     finally:
         cleanup_test_droppings(test, verbose)
 

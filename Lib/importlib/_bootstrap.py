@@ -404,7 +404,6 @@ class SourceLoader(_LoaderBasics):
                     else:
                         found = marshal.loads(bytes_data)
                         if isinstance(found, code_type):
-                            imp._fix_co_filename(found, source_path)
                             return found
                         else:
                             msg = "Non-code object in {}"
@@ -759,7 +758,7 @@ class _ImportLockContext:
 
 _IMPLICIT_META_PATH = [BuiltinImporter, FrozenImporter, _DefaultPathFinder]
 
-_ERR_MSG = 'No module named {!r}'
+_ERR_MSG = 'No module named {}'
 
 def _gcd_import(name, package=None, level=0):
     """Import and return the module based on its name, the package the call is
