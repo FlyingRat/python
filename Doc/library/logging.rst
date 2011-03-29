@@ -2880,8 +2880,6 @@ logging module using these functions or by making calls to the main API (defined
 in :mod:`logging` itself) and defining handlers which are declared either in
 :mod:`logging` or :mod:`logging.handlers`.
 
-.. currentmodule:: logging.config
-
 .. function:: dictConfig(config)
 
     Takes the logging configuration from a dictionary.  The contents of
@@ -2956,7 +2954,6 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    This is typically called before calling :meth:`join` on the return value from
    :func:`listen`.
 
-.. currentmodule:: logging
 
 .. _logging-config-dictschema:
 

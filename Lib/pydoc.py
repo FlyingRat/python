@@ -156,7 +156,7 @@ def _split_list(s, predicate):
             no.append(x)
     return yes, no
 
-def visiblename(name, all=None, obj=None):
+def visiblename(name, all=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant.
     _hidden_names = ('__builtins__', '__doc__', '__file__', '__path__',
@@ -164,9 +164,6 @@ def visiblename(name, all=None, obj=None):
     if name in _hidden_names: return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
-    # Namedtuples have public fields and methods with a single leading underscore
-    if name.startswith('_') and hasattr(obj, '_fields'):
-        return 1
     if all is not None:
         # only document that which the programmer exported in __all__
         return name in all
@@ -630,7 +627,7 @@ class HTMLDoc(Doc):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None or
                 (inspect.getmodule(value) or object) is object):
-                if visiblename(key, all, object):
+                if visiblename(key, all):
                     classes.append((key, value))
                     cdict[key] = cdict[value] = '#' + key
         for key, value in classes:
@@ -646,13 +643,13 @@ class HTMLDoc(Doc):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None or
                 inspect.isbuiltin(value) or inspect.getmodule(value) is object):
-                if visiblename(key, all, object):
+                if visiblename(key, all):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
                     if inspect.isfunction(value): fdict[value] = fdict[key]
         data = []
         for key, value in inspect.getmembers(object, isdata):
-            if visiblename(key, all, object):
+            if visiblename(key, all):
                 data.append((key, value))
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
@@ -776,7 +773,7 @@ class HTMLDoc(Doc):
                     push('\n')
             return attrs
 
-        attrs = filter(lambda data: visiblename(data[0], obj=object),
+        attrs = filter(lambda data: visiblename(data[0]),
                        classify_class_attrs(object))
         mdict = {}
         for key, kind, homecls, value in attrs:
@@ -1045,18 +1042,18 @@ class TextDoc(Doc):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None
                 or (inspect.getmodule(value) or object) is object):
-                if visiblename(key, all, object):
+                if visiblename(key, all):
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None or
                 inspect.isbuiltin(value) or inspect.getmodule(value) is object):
-                if visiblename(key, all, object):
+                if visiblename(key, all):
                     funcs.append((key, value))
         data = []
         for key, value in inspect.getmembers(object, isdata):
-            if visiblename(key, all, object):
+            if visiblename(key, all):
                 data.append((key, value))
 
         modpkgs = []
@@ -1189,7 +1186,7 @@ class TextDoc(Doc):
                                        name, mod, maxlen=70, doc=doc) + '\n')
             return attrs
 
-        attrs = filter(lambda data: visiblename(data[0], obj=object),
+        attrs = filter(lambda data: visiblename(data[0]),
                        classify_class_attrs(object))
         while attrs:
             if mro:

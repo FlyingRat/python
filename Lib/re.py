@@ -207,7 +207,8 @@ def escape(pattern):
     "Escape all non-alphanumeric characters in pattern."
     s = list(pattern)
     alphanum = _alphanum
-    for i, c in enumerate(pattern):
+    for i in range(len(pattern)):
+        c = pattern[i]
         if c not in alphanum:
             if c == "\000":
                 s[i] = "\\000"
