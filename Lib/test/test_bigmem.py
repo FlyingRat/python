@@ -1,13 +1,3 @@
-"""Bigmem tests - tests for the 32-bit boundary in containers.
-
-These tests try to exercise the 32-bit boundary that is sometimes, if
-rarely, exceeded in practice, but almost never tested.  They are really only
-meaningful on 64-bit builds on machines with a *lot* of memory, but the
-tests are always run, usually with very low memory limits to make sure the
-tests themselves don't suffer from bitrot.  To run them for real, pass a
-high memory limit to regrtest, with the -M option.
-"""
-
 from test import support
 from test.support import bigmemtest, _1G, _2G, _4G, precisionbigmemtest
 
@@ -16,45 +6,30 @@ import operator
 import sys
 import functools
 
-# These tests all use one of the bigmemtest decorators to indicate how much
-# memory they use and how much memory they need to be even meaningful.  The
-# decorators take two arguments: a 'memuse' indicator declaring
-# (approximate) bytes per size-unit the test will use (at peak usage), and a
-# 'minsize' indicator declaring a minimum *useful* size.  A test that
-# allocates a bytestring to test various operations near the end will have a
-# minsize of at least 2Gb (or it wouldn't reach the 32-bit limit, so the
-# test wouldn't be very useful) and a memuse of 1 (one byte per size-unit,
-# if it allocates only one big string at a time.)
-#
-# When run with a memory limit set, both decorators skip tests that need
-# more memory than available to be meaningful.  The precisionbigmemtest will
-# always pass minsize as size, even if there is much more memory available.
-# The bigmemtest decorator will scale size upward to fill available memory.
-#
 # Bigmem testing houserules:
 #
 #  - Try not to allocate too many large objects. It's okay to rely on
-#    refcounting semantics, and don't forget that 's = create_largestring()'
+#    refcounting semantics, but don't forget that 's = create_largestring()'
 #    doesn't release the old 's' (if it exists) until well after its new
 #    value has been created. Use 'del s' before the create_largestring call.
 #
-#  - Do *not* compare large objects using assertEqual, assertIn or similar.
-#    It's a lengthy operation and the errormessage will be utterly useless
-#    due to its size.  To make sure whether a result has the right contents,
-#    better to use the strip or count methods, or compare meaningful slices.
+#  - Do *not* compare large objects using assertEqual or similar. It's a
+#    lengthy operation and the errormessage will be utterly useless due to
+#    its size. To make sure whether a result has the right contents, better
+#    to use the strip or count methods, or compare meaningful slices.
 #
 #  - Don't forget to test for large indices, offsets and results and such,
-#    in addition to large sizes. Anything that probes the 32-bit boundary.
+#    in addition to large sizes.
 #
 #  - When repeating an object (say, a substring, or a small list) to create
 #    a large object, make the subobject of a length that is not a power of
 #    2. That way, int-wrapping problems are more easily detected.
 #
-#  - While the bigmem decorators speak of 'minsize', all tests will actually
-#    be called with a much smaller number too, in the normal test run (5Kb
-#    currently.) This is so the tests themselves get frequent testing.
-#    Consequently, always make all large allocations based on the passed-in
-#    'size', and don't rely on the size being very large. Also,
+#  - While the bigmemtest decorator speaks of 'minsize', all tests will
+#    actually be called with a much smaller number too, in the normal
+#    test run (5Kb currently.) This is so the tests themselves get frequent
+#    testing. Consequently, always make all large allocations based on the
+#    passed-in 'size', and don't rely on the size being very large. Also,
 #    memuse-per-size should remain sane (less than a few thousand); if your
 #    test uses more, adjust 'size' upward, instead.
 
@@ -117,7 +92,7 @@ class BaseStrTest:
         _ = self.from_latin1
         s = _('-') * size
         tabsize = 8
-        self.assertTrue(s.expandtabs() == s)
+        self.assertEqual(s.expandtabs(), s)
         del s
         slen, remainder = divmod(size, tabsize)
         s = _('       \t') * slen
@@ -544,19 +519,19 @@ class BaseStrTest:
         edge = _('-') * (size // 2)
         s = _('').join([edge, SUBSTR, edge])
         del edge
-        self.assertTrue(SUBSTR in s)
-        self.assertFalse(SUBSTR * 2 in s)
-        self.assertTrue(_('-') in s)
-        self.assertFalse(_('a') in s)
+        self.assertIn(SUBSTR, s)
+        self.assertNotIn(SUBSTR * 2, s)
+        self.assertIn(_('-'), s)
+        self.assertNotIn(_('a'), s)
         s += _('a')
-        self.assertTrue(_('a') in s)
+        self.assertIn(_('a'), s)
 
     @bigmemtest(minsize=_2G + 10, memuse=2)
     def test_compare(self, size):
         _ = self.from_latin1
         s1 = _('-') * size
         s2 = _('-') * size
-        self.assertTrue(s1 == s2)
+        self.assertEqual(s1, s2)
         del s2
         s2 = s1 + _('a')
         self.assertFalse(s1 == s2)
@@ -577,7 +552,7 @@ class BaseStrTest:
         h1 = hash(s)
         del s
         s = _('\x00') * (size + 1)
-        self.assertNotEqual(h1, hash(s))
+        self.assertFalse(h1 == hash(s))
 
 
 class StrTest(unittest.TestCase, BaseStrTest):
@@ -658,7 +633,7 @@ class StrTest(unittest.TestCase, BaseStrTest):
     def test_format(self, size):
         s = '-' * size
         sf = '%s' % (s,)
-        self.assertTrue(s == sf)
+        self.assertEqual(s, sf)
         del sf
         sf = '..%s..' % (s,)
         self.assertEqual(len(sf), len(s) + 4)
@@ -768,7 +743,7 @@ class TupleTest(unittest.TestCase):
     def test_compare(self, size):
         t1 = ('',) * size
         t2 = ('',) * size
-        self.assertTrue(t1 == t2)
+        self.assertEqual(t1, t2)
         del t2
         t2 = ('',) * (size + 1)
         self.assertFalse(t1 == t2)
@@ -799,9 +774,9 @@ class TupleTest(unittest.TestCase):
     def test_contains(self, size):
         t = (1, 2, 3, 4, 5) * size
         self.assertEqual(len(t), size * 5)
-        self.assertTrue(5 in t)
-        self.assertFalse((1, 2, 3, 4, 5) in t)
-        self.assertFalse(0 in t)
+        self.assertIn(5, t)
+        self.assertNotIn((1, 2, 3, 4, 5), t)
+        self.assertNotIn(0, t)
 
     @bigmemtest(minsize=_2G + 10, memuse=8)
     def test_hash(self, size):
@@ -904,7 +879,7 @@ class ListTest(unittest.TestCase):
     def test_compare(self, size):
         l1 = [''] * size
         l2 = [''] * size
-        self.assertTrue(l1 == l2)
+        self.assertEqual(l1, l2)
         del l2
         l2 = [''] * (size + 1)
         self.assertFalse(l1 == l2)
@@ -950,9 +925,9 @@ class ListTest(unittest.TestCase):
     def test_contains(self, size):
         l = [1, 2, 3, 4, 5] * size
         self.assertEqual(len(l), size * 5)
-        self.assertTrue(5 in l)
-        self.assertFalse([1, 2, 3, 4, 5] in l)
-        self.assertFalse(0 in l)
+        self.assertIn(5, l)
+        self.assertNotIn([1, 2, 3, 4, 5], l)
+        self.assertNotIn(0, l)
 
     @bigmemtest(minsize=_2G + 10, memuse=8)
     def test_hash(self, size):
