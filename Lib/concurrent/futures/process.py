@@ -66,17 +66,28 @@ import weakref
 # workers to exit when their work queues are empty and then waits until the
 # threads/processes finish.
 
-_threads_queues = weakref.WeakKeyDictionary()
+_thread_references = set()
 _shutdown = False
 
 def _python_exit():
     global _shutdown
     _shutdown = True
-    items = list(_threads_queues.items())
-    for t, q in items:
-        q.put(None)
-    for t, q in items:
-        t.join()
+    for thread_reference in _thread_references:
+        thread = thread_reference()
+        if thread is not None:
+            thread.join()
+
+def _remove_dead_thread_references():
+    """Remove inactive threads from _thread_references.
+
+    Should be called periodically to prevent memory leaks in scenarios such as:
+    >>> while True:
+    >>> ...    t = ThreadPoolExecutor(max_workers=5)
+    >>> ...    t.map(int, ['1', '2', '3', '4', '5'])
+    """
+    for thread_reference in set(_thread_references):
+        if thread_reference() is None:
+            _thread_references.discard(thread_reference)
 
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
@@ -119,15 +130,11 @@ def _process_worker(call_queue, result_queue, shutdown):
     """
     while True:
         try:
-            call_item = call_queue.get(block=True)
+            call_item = call_queue.get(block=True, timeout=0.1)
         except queue.Empty:
             if shutdown.is_set():
                 return
         else:
-            if call_item is None:
-                # Wake up queue management thread
-                result_queue.put(None)
-                return
             try:
                 r = call_item.fn(*call_item.args, **call_item.kwargs)
             except BaseException as e:
@@ -202,56 +209,40 @@ def _queue_manangement_worker(executor_reference,
             process workers that they should exit when their work queue is
             empty.
     """
-    nb_shutdown_processes = 0
-    def shutdown_one_process():
-        """Tell a worker to terminate, which will in turn wake us again"""
-        nonlocal nb_shutdown_processes
-        call_queue.put(None)
-        nb_shutdown_processes += 1
     while True:
         _add_call_item_to_queue(pending_work_items,
                                 work_ids_queue,
                                 call_queue)
 
         try:
-            result_item = result_queue.get(block=True)
+            result_item = result_queue.get(block=True, timeout=0.1)
         except queue.Empty:
-            pass
+            executor = executor_reference()
+            # No more work items can be added if:
+            #   - The interpreter is shutting down OR
+            #   - The executor that owns this worker has been collected OR
+            #   - The executor that owns this worker has been shutdown.
+            if _shutdown or executor is None or executor._shutdown_thread:
+                # Since no new work items can be added, it is safe to shutdown
+                # this thread if there are no pending work items.
+                if not pending_work_items:
+                    shutdown_process_event.set()
+
+                    # If .join() is not called on the created processes then
+                    # some multiprocessing.Queue methods may deadlock on Mac OS
+                    # X.
+                    for p in processes:
+                        p.join()
+                    return
+            del executor
         else:
-            if result_item is not None:
-                work_item = pending_work_items[result_item.work_id]
-                del pending_work_items[result_item.work_id]
+            work_item = pending_work_items[result_item.work_id]
+            del pending_work_items[result_item.work_id]
 
-                if result_item.exception:
-                    work_item.future.set_exception(result_item.exception)
-                else:
-                    work_item.future.set_result(result_item.result)
-                continue
-        # If we come here, we either got a timeout or were explicitly woken up.
-        # In either case, check whether we should start shutting down.
-        executor = executor_reference()
-        # No more work items can be added if:
-        #   - The interpreter is shutting down OR
-        #   - The executor that owns this worker has been collected OR
-        #   - The executor that owns this worker has been shutdown.
-        if _shutdown or executor is None or executor._shutdown_thread:
-            # Since no new work items can be added, it is safe to shutdown
-            # this thread if there are no pending work items.
-            if not pending_work_items:
-                shutdown_process_event.set()
-
-                while nb_shutdown_processes < len(processes):
-                    shutdown_one_process()
-                # If .join() is not called on the created processes then
-                # some multiprocessing.Queue methods may deadlock on Mac OS
-                # X.
-                for p in processes:
-                    p.join()
-                return
+            if result_item.exception:
+                work_item.future.set_exception(result_item.exception)
             else:
-                # Start shutting down by telling a process it can exit.
-                shutdown_one_process()
-        del executor
+                work_item.future.set_result(result_item.result)
 
 _system_limits_checked = False
 _system_limited = None
@@ -288,6 +279,7 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
         """
         _check_system_limits()
+        _remove_dead_thread_references()
 
         if max_workers is None:
             self._max_workers = multiprocessing.cpu_count()
@@ -312,14 +304,10 @@ class ProcessPoolExecutor(_base.Executor):
         self._pending_work_items = {}
 
     def _start_queue_management_thread(self):
-        # When the executor gets lost, the weakref callback will wake up
-        # the queue management thread.
-        def weakref_cb(_, q=self._result_queue):
-            q.put(None)
         if self._queue_management_thread is None:
             self._queue_management_thread = threading.Thread(
                     target=_queue_manangement_worker,
-                    args=(weakref.ref(self, weakref_cb),
+                    args=(weakref.ref(self),
                           self._processes,
                           self._pending_work_items,
                           self._work_ids,
@@ -328,7 +316,7 @@ class ProcessPoolExecutor(_base.Executor):
                           self._shutdown_process_event))
             self._queue_management_thread.daemon = True
             self._queue_management_thread.start()
-            _threads_queues[self._queue_management_thread] = self._result_queue
+            _thread_references.add(weakref.ref(self._queue_management_thread))
 
     def _adjust_process_count(self):
         for _ in range(len(self._processes), self._max_workers):
@@ -351,8 +339,6 @@ class ProcessPoolExecutor(_base.Executor):
             self._pending_work_items[self._queue_count] = w
             self._work_ids.put(self._queue_count)
             self._queue_count += 1
-            # Wake up queue management thread
-            self._result_queue.put(None)
 
             self._start_queue_management_thread()
             self._adjust_process_count()
@@ -362,10 +348,8 @@ class ProcessPoolExecutor(_base.Executor):
     def shutdown(self, wait=True):
         with self._shutdown_lock:
             self._shutdown_thread = True
-        if self._queue_management_thread:
-            # Wake up queue management thread
-            self._result_queue.put(None)
-            if wait:
+        if wait:
+            if self._queue_management_thread:
                 self._queue_management_thread.join()
         # To reduce the risk of openning too many files, remove references to
         # objects that use file descriptors.

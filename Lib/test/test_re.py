@@ -1,9 +1,7 @@
 from test.support import verbose, run_unittest
 import re
 from re import Scanner
-import sys
-import string
-import traceback
+import sys, traceback
 from weakref import proxy
 
 # Misc tests from Tim Peters' re.doc
@@ -413,62 +411,31 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search("\s(b)", " b").group(1), "b")
         self.assertEqual(re.search("a\s", "a ").group(0), "a ")
 
-    def assertMatch(self, pattern, text, match=None, span=None,
-                    matcher=re.match):
-        if match is None and span is None:
-            # the pattern matches the whole text
-            match = text
-            span = (0, len(text))
-        elif match is None or span is None:
-            raise ValueError('If match is not None, span should be specified '
-                             '(and vice versa).')
-        m = matcher(pattern, text)
-        self.assertTrue(m)
-        self.assertEqual(m.group(), match)
-        self.assertEqual(m.span(), span)
-
     def test_re_escape(self):
-        alnum_chars = string.ascii_letters + string.digits
-        p = ''.join(chr(i) for i in range(256))
-        for c in p:
-            if c in alnum_chars:
-                self.assertEqual(re.escape(c), c)
-            elif c == '\x00':
-                self.assertEqual(re.escape(c), '\\000')
-            else:
-                self.assertEqual(re.escape(c), '\\' + c)
-            self.assertMatch(re.escape(c), c)
-        self.assertMatch(re.escape(p), p)
+        p=""
+        self.assertEqual(re.escape(p), p)
+        for i in range(0, 256):
+            p = p + chr(i)
+            self.assertEqual(re.match(re.escape(chr(i)), chr(i)) is not None,
+                             True)
+            self.assertEqual(re.match(re.escape(chr(i)), chr(i)).span(), (0,1))
+
+        pat=re.compile(re.escape(p))
+        self.assertEqual(pat.match(p) is not None, True)
+        self.assertEqual(pat.match(p).span(), (0,256))
 
     def test_re_escape_byte(self):
-        alnum_chars = (string.ascii_letters + string.digits).encode('ascii')
-        p = bytes(range(256))
-        for i in p:
+        p=b""
+        self.assertEqual(re.escape(p), p)
+        for i in range(0, 256):
             b = bytes([i])
-            if b in alnum_chars:
-                self.assertEqual(re.escape(b), b)
-            elif i == 0:
-                self.assertEqual(re.escape(b), b'\\000')
-            else:
-                self.assertEqual(re.escape(b), b'\\' + b)
-            self.assertMatch(re.escape(b), b)
-        self.assertMatch(re.escape(p), p)
+            p += b
+            self.assertEqual(re.match(re.escape(b), b) is not None, True)
+            self.assertEqual(re.match(re.escape(b), b).span(), (0,1))
 
-    def test_re_escape_non_ascii(self):
-        s = 'xxx\u2620\u2620\u2620xxx'
-        s_escaped = re.escape(s)
-        self.assertEqual(s_escaped, 'xxx\\\u2620\\\u2620\\\u2620xxx')
-        self.assertMatch(s_escaped, s)
-        self.assertMatch('.%s+.' % re.escape('\u2620'), s,
-                         'x\u2620\u2620\u2620x', (2, 7), re.search)
-
-    def test_re_escape_non_ascii_bytes(self):
-        b = 'y\u2620y\u2620y'.encode('utf-8')
-        b_escaped = re.escape(b)
-        self.assertEqual(b_escaped, b'y\\\xe2\\\x98\\\xa0y\\\xe2\\\x98\\\xa0y')
-        self.assertMatch(b_escaped, b)
-        res = re.findall(re.escape('\u2620'.encode('utf-8')), b)
-        self.assertEqual(len(res), 2)
+        pat=re.compile(re.escape(p))
+        self.assertEqual(pat.match(p) is not None, True)
+        self.assertEqual(pat.match(p).span(), (0,256))
 
     def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
