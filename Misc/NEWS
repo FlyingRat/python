@@ -60,13 +60,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #11768: The signal handler of the signal module only calls
-  Py_AddPendingCall() for the first signal to fix a deadlock on reentrant or
-  parallel calls. PyErr_SetInterrupt() writes also into the wake up file.
-
-- Issue #11492: fix several issues with header folding in the email package.
-
 - Issue #11852: Add missing imports and update tests.
+
+- Issue #11875: collections.OrderedDict's __reduce__ was temporarily
+  mutating the object instead of just working on a copy.
 
 - Issue #11467: Fix urlparse behavior when handling urls which contains scheme
   specific part only digits. Patch by Santoso Wijaya.
@@ -750,8 +747,6 @@ Tools/Demos
 
 Tests
 -----
-
-- Fix test_startfile to wait for child process to terminate before finishing.
 
 - Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
   by Ross Lagerwall.
