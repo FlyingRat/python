@@ -166,20 +166,6 @@ checksignals_witharg(void * unused)
 }
 
 static void
-trip_signal(int sig_num)
-{
-    Handlers[sig_num].tripped = 1;
-    if (is_tripped)
-        return;
-    /* Set is_tripped after setting .tripped, as it gets
-       cleared in PyErr_CheckSignals() before .tripped. */
-    is_tripped = 1;
-    Py_AddPendingCall(checksignals_witharg, NULL);
-    if (wakeup_fd != -1)
-        write(wakeup_fd, "\0", 1);
-}
-
-static void
 signal_handler(int sig_num)
 {
     int save_errno = errno;
@@ -196,7 +182,13 @@ signal_handler(int sig_num)
     if (getpid() == main_pid)
 #endif
     {
-        trip_signal(sig_num);
+        Handlers[sig_num].tripped = 1;
+        /* Set is_tripped after setting .tripped, as it gets
+           cleared in PyErr_CheckSignals() before .tripped. */
+        is_tripped = 1;
+        Py_AddPendingCall(checksignals_witharg, NULL);
+        if (wakeup_fd != -1)
+            write(wakeup_fd, "\0", 1);
     }
 
 #ifndef HAVE_SIGACTION
@@ -954,7 +946,9 @@ PyErr_CheckSignals(void)
 void
 PyErr_SetInterrupt(void)
 {
-    trip_signal(SIGINT);
+    is_tripped = 1;
+    Handlers[SIGINT].tripped = 1;
+    Py_AddPendingCall((int (*)(void *))PyErr_CheckSignals, NULL);
 }
 
 void
