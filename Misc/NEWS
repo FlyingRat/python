@@ -55,12 +55,11 @@ Core and Builtins
 Library
 -------
 
-- Issue #11768: The signal handler of the signal module only calls
-  Py_AddPendingCall() for the first signal to fix a deadlock on reentrant or
-  parallel calls. PyErr_SetInterrupt() writes also into the wake up file.
-
 - Issue #11467: Fix urlparse behavior when handling urls which contains scheme
   specific part only digits. Patch by Santoso Wijaya.
+
+- Issue #11875: collections.OrderedDict's __reduce__ was temporarily
+  mutating the object instead of just working on a copy.
 
 - collections.Counter().copy() now works correctly for subclasses.
 
@@ -314,8 +313,6 @@ Build
 
 Tests
 -----
-
-- Fix test_startfile to wait for child process to terminate before finishing.
 
 - Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
   platforms. Patch by Nadeem Vawda.
