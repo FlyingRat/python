@@ -418,12 +418,16 @@ faulthandler_thread(void *unused)
     const char* errmsg;
     PyThreadState *current;
     int ok;
-#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+#ifdef HAVE_PTHREAD_H
     sigset_t set;
 
     /* we don't want to receive any signal */
     sigfillset(&set);
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
     pthread_sigmask(SIG_SETMASK, &set, NULL);
+#else
+    sigprocmask(SIG_SETMASK, &set, NULL);
+#endif
 #endif
 
     do {

@@ -112,14 +112,6 @@ connection when done::
 
 (Contributed by Giampaolo Rodolà in :issue:`9795`)
 
-threading
----------
-
-* The :mod:`threading` module has a new :func:`~threading._info` function which
-  provides informations about the thread implementation.
-
-  (:issue:`11223`)
-
 Optimizations
 =============
 
@@ -134,12 +126,6 @@ Build and C API Changes
 Changes to Python's build process and to the C API include:
 
 * Stub
-
-
-Unsupported operating systems
-=============================
-
-OS/2 and VMS are no more supported because of the lack of maintainer.
 
 
 Porting to Python 3.3

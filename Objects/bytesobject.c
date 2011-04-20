@@ -1240,9 +1240,19 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
     const char *sub;
     Py_ssize_t sub_len;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
+    PyObject *obj_start=Py_None, *obj_end=Py_None;
 
-    if (!stringlib_parse_args_finds("find/rfind/index/rindex",
-                                    args, &subobj, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|OO:find/rfind/index/rindex", &subobj,
+        &obj_start, &obj_end))
+        return -2;
+    /* To support None in "start" and "end" arguments, meaning
+       the same as if they were not passed.
+    */
+    if (obj_start != Py_None)
+        if (!_PyEval_SliceIndex(obj_start, &start))
+        return -2;
+    if (obj_end != Py_None)
+        if (!_PyEval_SliceIndex(obj_end, &end))
         return -2;
 
     if (PyBytes_Check(subobj)) {
@@ -1489,7 +1499,8 @@ bytes_count(PyBytesObject *self, PyObject *args)
     Py_ssize_t sub_len;
     Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
 
-    if (!stringlib_parse_args_finds("count", args, &sub_obj, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:count", &sub_obj,
+        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
 
     if (PyBytes_Check(sub_obj)) {
@@ -2207,7 +2218,8 @@ bytes_startswith(PyBytesObject *self, PyObject *args)
     PyObject *subobj;
     int result;
 
-    if (!stringlib_parse_args_finds("startswith", args, &subobj, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
+        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
@@ -2224,12 +2236,8 @@ bytes_startswith(PyBytesObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     result = _bytes_tailmatch(self, subobj, start, end, -1);
-    if (result == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            PyErr_Format(PyExc_TypeError, "startswith first arg must be bytes "
-                         "or a tuple of bytes, not %s", Py_TYPE(subobj)->tp_name);
+    if (result == -1)
         return NULL;
-    }
     else
         return PyBool_FromLong(result);
 }
@@ -2251,7 +2259,8 @@ bytes_endswith(PyBytesObject *self, PyObject *args)
     PyObject *subobj;
     int result;
 
-    if (!stringlib_parse_args_finds("endswith", args, &subobj, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
+        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
@@ -2268,12 +2277,8 @@ bytes_endswith(PyBytesObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     result = _bytes_tailmatch(self, subobj, start, end, +1);
-    if (result == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            PyErr_Format(PyExc_TypeError, "endswith first arg must be bytes or "
-                         "a tuple of bytes, not %s", Py_TYPE(subobj)->tp_name);
+    if (result == -1)
         return NULL;
-    }
     else
         return PyBool_FromLong(result);
 }

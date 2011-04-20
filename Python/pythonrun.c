@@ -53,7 +53,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
 static void initmain(void);
-static int initfsencoding(PyInterpreterState *interp);
+static void initfsencoding(void);
 static void initsite(void);
 static int initstdio(void);
 static void flush_io(void);
@@ -298,8 +298,7 @@ Py_InitializeEx(int install_sigs)
 
     _PyTime_Init();
 
-    if (initfsencoding(interp) < 0)
-        Py_FatalError("Py_Initialize: unable to load the file system codec");
+    initfsencoding();
 
     if (install_sigs)
         initsigs(); /* Signal handling stuff, including initintr() */
@@ -619,10 +618,6 @@ Py_NewInterpreter(void)
         Py_DECREF(pstderr);
 
         _PyImportHooks_Init();
-
-        if (initfsencoding(interp) < 0)
-            goto handle_error;
-
         if (initstdio() < 0)
             Py_FatalError(
             "Py_Initialize: can't initialize sys standard streams");
@@ -637,7 +632,7 @@ Py_NewInterpreter(void)
 handle_error:
     /* Oops, it didn't work.  Undo it all. */
 
-    PyErr_PrintEx(0);
+    PyErr_Print();
     PyThreadState_Clear(tstate);
     PyThreadState_Swap(save_tstate);
     PyThreadState_Delete(tstate);
@@ -735,8 +730,8 @@ initmain(void)
     }
 }
 
-static int
-initfsencoding(PyInterpreterState *interp)
+static void
+initfsencoding(void)
 {
     PyObject *codec;
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
@@ -753,8 +748,7 @@ initfsencoding(PyInterpreterState *interp)
 
         Py_FileSystemDefaultEncoding = codeset;
         Py_HasFileSystemDefaultEncoding = 0;
-        interp->fscodec_initialized = 1;
-        return 0;
+        return;
     }
 #endif
 
@@ -764,11 +758,10 @@ initfsencoding(PyInterpreterState *interp)
         /* Such error can only occurs in critical situations: no more
          * memory, import a module of the standard library failed,
          * etc. */
-        return -1;
+        Py_FatalError("Py_Initialize: unable to load the file system codec");
+    } else {
+        Py_DECREF(codec);
     }
-    Py_DECREF(codec);
-    interp->fscodec_initialized = 1;
-    return 0;
 }
 
 /* Import the site module (not into __main__ though) */

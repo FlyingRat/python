@@ -224,8 +224,8 @@ always available.
 
 .. data:: flags
 
-   The :term:`struct sequence` *flags* exposes the status of command line
-   flags. The attributes are read only.
+   The struct sequence *flags* exposes the status of command line flags. The
+   attributes are read only.
 
    ============================= =============================
    attribute                     flag
@@ -249,12 +249,12 @@ always available.
 
 .. data:: float_info
 
-   A :term:`struct sequence` holding information about the float type. It
-   contains low level information about the precision and internal
-   representation.  The values correspond to the various floating-point
-   constants defined in the standard header file :file:`float.h` for the 'C'
-   programming language; see section 5.2.4.2.2 of the 1999 ISO/IEC C standard
-   [C99]_, 'Characteristics of floating types', for details.
+   A structseq holding information about the float type. It contains low level
+   information about the precision and internal representation.  The values
+   correspond to the various floating-point constants defined in the standard
+   header file :file:`float.h` for the 'C' programming language; see section
+   5.2.4.2.2 of the 1999 ISO/IEC C standard [C99]_, 'Characteristics of
+   floating types', for details.
 
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
@@ -500,9 +500,8 @@ always available.
 
 .. data:: hash_info
 
-   A :term:`struct sequence` giving parameters of the numeric hash
-   implementation.  For more details about hashing of numeric types, see
-   :ref:`numeric-hash`.
+   A structseq giving parameters of the numeric hash implementation.  For
+   more details about hashing of numeric types, see :ref:`numeric-hash`.
 
    +---------------------+--------------------------------------------------+
    | attribute           | explanation                                      |
@@ -540,34 +539,11 @@ always available.
    ``version_info`` value may be used for a more human-friendly encoding of the
    same information.
 
-   The ``hexversion`` is a 32-bit number with the following layout
-
-   +-------------------------+------------------------------------------------+
-   | bits (big endian order) | meaning                                        |
-   +=========================+================================================+
-   | :const:`1-8`            |  ``PY_MAJOR_VERSION``  (the ``2`` in           |
-   |                         |  ``2.1.0a3``)                                  |
-   +-------------------------+------------------------------------------------+
-   | :const:`9-16`           |  ``PY_MINOR_VERSION``  (the ``1`` in           |
-   |                         |  ``2.1.0a3``)                                  |
-   +-------------------------+------------------------------------------------+
-   | :const:`17-24`          |  ``PY_MICRO_VERSION``  (the ``0`` in           |
-   |                         |  ``2.1.0a3``)                                  |
-   +-------------------------+------------------------------------------------+
-   | :const:`25-28`          |  ``PY_RELEASE_LEVEL``  (``0xA`` for alpha,     |
-   |                         |  ``0xB`` for beta, ``0xC`` for gamma and       |
-   |                         |  ``0xF`` for final)                            |
-   +-------------------------+------------------------------------------------+
-   | :const:`29-32`          |  ``PY_RELEASE_SERIAL``  (the ``3`` in          |
-   |                         |  ``2.1.0a3``)                                  |
-   +-------------------------+------------------------------------------------+
-
-   thus ``2.1.0a3`` is hexversion ``0x020100a3``
 
 .. data:: int_info
 
-   A :term:`struct sequence` that holds information about Python's internal
-   representation of integers.  The attributes are read only.
+   A struct sequence that holds information about Python's
+   internal representation of integers.  The attributes are read only.
 
    +-------------------------+----------------------------------------------+
    | attribute               | explanation                                  |

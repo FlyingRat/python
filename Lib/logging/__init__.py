@@ -37,13 +37,13 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
 
 try:
     import codecs
-except ImportError: #pragma: no cover
+except ImportError:
     codecs = None
 
 try:
     import _thread as thread
     import threading
-except ImportError: #pragma: no cover
+except ImportError:
     thread = None
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
@@ -67,16 +67,16 @@ else:
     _srcfile = __file__
 _srcfile = os.path.normcase(_srcfile)
 
+# next bit filched from 1.5.2's inspect.py
+def currentframe():
+    """Return the frame object for the caller's stack frame."""
+    try:
+        raise Exception
+    except:
+        return sys.exc_info()[2].tb_frame.f_back
 
-if hasattr(sys, '_getframe'):
-    currentframe = lambda: sys._getframe(3)
-else: #pragma: no cover
-    def currentframe():
-        """Return the frame object for the caller's stack frame."""
-        try:
-            raise Exception
-        except:
-            return sys.exc_info()[2].tb_frame.f_back
+if hasattr(sys, '_getframe'): currentframe = lambda: sys._getframe(3)
+# done filching
 
 # _srcfile is only used in conjunction with sys._getframe().
 # To provide compatibility with older versions of Python, set _srcfile
@@ -94,22 +94,22 @@ _startTime = time.time()
 #raiseExceptions is used to see if exceptions during handling should be
 #propagated
 #
-raiseExceptions = True
+raiseExceptions = 1
 
 #
 # If you don't want threading information in the log, set this to zero
 #
-logThreads = True
+logThreads = 1
 
 #
 # If you don't want multiprocessing information in the log, set this to zero
 #
-logMultiprocessing = True
+logMultiprocessing = 1
 
 #
 # If you don't want process information in the log, set this to zero
 #
-logProcesses = True
+logProcesses = 1
 
 #---------------------------------------------------------------------------
 #   Level related stuff
@@ -201,7 +201,7 @@ def _checkLevel(level):
 #
 if thread:
     _lock = threading.RLock()
-else: #pragma: no cover
+else:
     _lock = None
 
 
@@ -281,10 +281,10 @@ class LogRecord(object):
         if logThreads and thread:
             self.thread = thread.get_ident()
             self.threadName = threading.current_thread().name
-        else: # pragma: no cover
+        else:
             self.thread = None
             self.threadName = None
-        if not logMultiprocessing: # pragma: no cover
+        if not logMultiprocessing:
             self.processName = None
         else:
             self.processName = 'MainProcess'
@@ -644,11 +644,11 @@ class Filter(object):
         yes. If deemed appropriate, the record may be modified in-place.
         """
         if self.nlen == 0:
-            return True
+            return 1
         elif self.name == record.name:
-            return True
+            return 1
         elif record.name.find(self.name, 0, self.nlen) != 0:
-            return False
+            return 0
         return (record.name[self.nlen] == ".")
 
 class Filterer(object):
@@ -775,7 +775,7 @@ class Handler(Filterer):
         """
         if thread:
             self.lock = threading.RLock()
-        else: #pragma: no cover
+        else:
             self.lock = None
 
     def acquire(self):
@@ -890,7 +890,7 @@ class Handler(Filterer):
                                           None, sys.stderr)
                 sys.stderr.write('Logged from file %s, line %s\n' % (
                                  record.filename, record.lineno))
-            except IOError: #pragma: no cover
+            except IOError:
                 pass    # see issue 5971
             finally:
                 del ei
@@ -939,7 +939,7 @@ class StreamHandler(Handler):
             stream.write(msg)
             stream.write(self.terminator)
             self.flush()
-        except (KeyboardInterrupt, SystemExit): #pragma: no cover
+        except (KeyboardInterrupt, SystemExit):
             raise
         except:
             self.handleError(record)
@@ -948,13 +948,13 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding=None, delay=0):
         """
         Open the specified file and use it as the stream for logging.
         """
         #keep the absolute path, otherwise derived classes which use this
         #may come a cropper when the current directory changes
-        if codecs is None:  #pragma: no cover
+        if codecs is None:
             encoding = None
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
@@ -1352,9 +1352,9 @@ class Logger(Filterer):
             #IronPython can use logging.
             try:
                 fn, lno, func, sinfo = self.findCaller(stack_info)
-            except ValueError: # pragma: no cover
+            except ValueError:
                 fn, lno, func = "(unknown file)", 0, "(unknown function)"
-        else: # pragma: no cover
+        else:
             fn, lno, func = "(unknown file)", 0, "(unknown function)"
         if exc_info:
             if not isinstance(exc_info, tuple):
@@ -1465,7 +1465,7 @@ class Logger(Filterer):
         Is this logger enabled for level 'level'?
         """
         if self.manager.disable >= level:
-            return False
+            return 0
         return level >= self.getEffectiveLevel()
 
     def getChild(self, suffix):

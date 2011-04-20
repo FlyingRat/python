@@ -43,7 +43,6 @@ import tempfile
 from test.support import captured_stdout, run_with_locale, run_unittest, patch
 from test.support import TestHandler, Matcher
 import textwrap
-import time
 import unittest
 import warnings
 import weakref
@@ -352,10 +351,6 @@ class BasicFilterTest(BaseTest):
         finally:
             handler.removeFilter(filterfunc)
 
-    def test_empty_filter(self):
-        f = logging.Filter()
-        r = logging.makeLogRecord({'name': 'spam.eggs'})
-        self.assertTrue(f.filter(r))
 
 #
 #   First, we define our levels. There can be as many as you want - the only
@@ -498,93 +493,6 @@ class CustomLevelsAndFiltersTest(BaseTest):
                 self.root_logger.removeFilter(specific_filter)
             handler.removeFilter(garr)
 
-
-class HandlerTest(BaseTest):
-    def test_name(self):
-        h = logging.Handler()
-        h.name = 'generic'
-        self.assertEqual(h.name, 'generic')
-        h.name = 'anothergeneric'
-        self.assertEqual(h.name, 'anothergeneric')
-        self.assertRaises(NotImplementedError, h.emit, None)
-
-    def test_builtin_handlers(self):
-        # We can't actually *use* too many handlers in the tests,
-        # but we can try instantiating them with various options
-        if sys.platform in ('linux2', 'darwin'):
-            for existing in (True, False):
-                fd, fn = tempfile.mkstemp()
-                os.close(fd)
-                if not existing:
-                    os.unlink(fn)
-                h = logging.handlers.WatchedFileHandler(fn, delay=True)
-                if existing:
-                    self.assertNotEqual(h.dev, -1)
-                    self.assertNotEqual(h.ino, -1)
-                else:
-                    self.assertEqual(h.dev, -1)
-                    self.assertEqual(h.ino, -1)
-                h.close()
-                if existing:
-                    os.unlink(fn)
-            if sys.platform == 'darwin':
-                sockname = '/var/run/syslog'
-            else:
-                sockname = '/dev/log'
-            try:
-                h = logging.handlers.SysLogHandler(sockname)
-                self.assertEqual(h.facility, h.LOG_USER)
-                self.assertTrue(h.unixsocket)
-                h.close()
-            except socket.error: # syslogd might not be available
-                pass
-        h = logging.handlers.SMTPHandler('localhost', 'me', 'you', 'Log')
-        self.assertEqual(h.toaddrs, ['you'])
-        h.close()
-        for method in ('GET', 'POST', 'PUT'):
-            if method == 'PUT':
-                self.assertRaises(ValueError, logging.handlers.HTTPHandler,
-                                  'localhost', '/log', method)
-            else:
-                h = logging.handlers.HTTPHandler('localhost', '/log', method)
-                h.close()
-        h = logging.handlers.BufferingHandler(0)
-        r = logging.makeLogRecord({})
-        self.assertTrue(h.shouldFlush(r))
-        h.close()
-        h = logging.handlers.BufferingHandler(1)
-        self.assertFalse(h.shouldFlush(r))
-        h.close()
-
-class BadStream(object):
-    def write(self, data):
-        raise RuntimeError('deliberate mistake')
-
-class TestStreamHandler(logging.StreamHandler):
-    def handleError(self, record):
-        self.error_record = record
-
-class StreamHandlerTest(BaseTest):
-    def test_error_handling(self):
-        h = TestStreamHandler(BadStream())
-        r = logging.makeLogRecord({})
-        old_raise = logging.raiseExceptions
-        old_stderr = sys.stderr
-        try:
-            h.handle(r)
-            self.assertIs(h.error_record, r)
-            h = logging.StreamHandler(BadStream())
-            sys.stderr = sio = io.StringIO()
-            h.handle(r)
-            self.assertTrue('\nRuntimeError: '
-                            'deliberate mistake\n' in sio.getvalue())
-            logging.raiseExceptions = False
-            sys.stderr = sio = io.StringIO()
-            h.handle(r)
-            self.assertEqual('', sio.getvalue())
-        finally:
-            logging.raiseExceptions = old_raise
-            sys.stderr = old_stderr
 
 class MemoryHandlerTest(BaseTest):
 
@@ -2093,27 +2001,6 @@ class ConfigDictTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
-    def test_baseconfig(self):
-        d = {
-            'atuple': (1, 2, 3),
-            'alist': ['a', 'b', 'c'],
-            'adict': {'d': 'e', 'f': 3 },
-            'nest1': ('g', ('h', 'i'), 'j'),
-            'nest2': ['k', ['l', 'm'], 'n'],
-            'nest3': ['o', 'cfg://alist', 'p'],
-        }
-        bc = logging.config.BaseConfigurator(d)
-        self.assertEqual(bc.convert('cfg://atuple[1]'), 2)
-        self.assertEqual(bc.convert('cfg://alist[1]'), 'b')
-        self.assertEqual(bc.convert('cfg://nest1[1][0]'), 'h')
-        self.assertEqual(bc.convert('cfg://nest2[1][1]'), 'm')
-        self.assertEqual(bc.convert('cfg://adict.d'), 'e')
-        self.assertEqual(bc.convert('cfg://adict[f]'), 3)
-        v = bc.convert('cfg://nest3')
-        self.assertEqual(v.pop(1), ['a', 'b', 'c'])
-        self.assertRaises(KeyError, bc.convert, 'cfg://nosuch')
-        self.assertRaises(ValueError, bc.convert, 'cfg://!')
-        self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -2236,18 +2123,6 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
 
-ZERO = datetime.timedelta(0)
-
-class UTC(datetime.tzinfo):
-    def utcoffset(self, dt):
-        return ZERO
-
-    dst = utcoffset
-
-    def tzname(self, dt):
-        return 'UTC'
-
-utc = UTC()
 
 class FormatterTest(unittest.TestCase):
     def setUp(self):
@@ -2321,69 +2196,6 @@ class FormatterTest(unittest.TestCase):
         f = logging.Formatter('asctime', style='$')
         self.assertFalse(f.usesTime())
 
-    def test_invalid_style(self):
-        self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
-
-    def test_time(self):
-        r = self.get_record()
-        dt = datetime.datetime(1993,4,21,8,3,0,0,utc)
-        r.created = time.mktime(dt.timetuple()) - time.timezone
-        r.msecs = 123
-        f = logging.Formatter('%(asctime)s %(message)s')
-        f.converter = time.gmtime
-        self.assertEqual(f.formatTime(r), '1993-04-21 08:03:00,123')
-        self.assertEqual(f.formatTime(r, '%Y:%d'), '1993:21')
-        f.format(r)
-        self.assertEqual(r.asctime, '1993-04-21 08:03:00,123')
-
-class TestBufferingFormatter(logging.BufferingFormatter):
-    def formatHeader(self, records):
-        return '[(%d)' % len(records)
-
-    def formatFooter(self, records):
-        return '(%d)]' % len(records)
-
-class BufferingFormatterTest(unittest.TestCase):
-    def setUp(self):
-        self.records = [
-            logging.makeLogRecord({'msg': 'one'}),
-            logging.makeLogRecord({'msg': 'two'}),
-        ]
-
-    def test_default(self):
-        f = logging.BufferingFormatter()
-        self.assertEqual('', f.format([]))
-        self.assertEqual('onetwo', f.format(self.records))
-
-    def test_custom(self):
-        f = TestBufferingFormatter()
-        self.assertEqual('[(2)onetwo(2)]', f.format(self.records))
-        lf = logging.Formatter('<%(message)s>')
-        f = TestBufferingFormatter(lf)
-        self.assertEqual('[(2)<one><two>(2)]', f.format(self.records))
-
-class ExceptionTest(BaseTest):
-    def test_formatting(self):
-        r = self.root_logger
-        h = RecordingHandler()
-        r.addHandler(h)
-        try:
-            raise RuntimeError('deliberate mistake')
-        except:
-            logging.exception('failed', stack_info=True)
-        r.removeHandler(h)
-        h.close()
-        r = h.records[0]
-        self.assertTrue(r.exc_text.startswith('Traceback (most recent '
-                                              'call last):\n'))
-        self.assertTrue(r.exc_text.endswith('\nRuntimeError: '
-                                            'deliberate mistake'))
-        self.assertTrue(r.stack_info.startswith('Stack (most recent '
-                                              'call last):\n'))
-        self.assertTrue(r.stack_info.endswith('logging.exception(\'failed\', '
-                                            'stack_info=True)'))
-
-
 class LastResortTest(BaseTest):
     def test_last_resort(self):
         # Test the last resort handler
@@ -2443,7 +2255,7 @@ class RecordingHandler(logging.NullHandler):
 
 class ShutdownTest(BaseTest):
 
-    """Test suite for the shutdown method."""
+    """Tets suite for the shutdown method."""
 
     def setUp(self):
         super(ShutdownTest, self).setUp()
@@ -2530,7 +2342,7 @@ class ShutdownTest(BaseTest):
 
 class ModuleLevelMiscTest(BaseTest):
 
-    """Test suite for some module level methods."""
+    """Tets suite for some module level methods."""
 
     def test_disable(self):
         old_disable = logging.root.manager.disable
@@ -2544,7 +2356,7 @@ class ModuleLevelMiscTest(BaseTest):
     def _test_log(self, method, level=None):
         called = []
         patch(self, logging, 'basicConfig',
-              lambda *a, **kw: called.append((a, kw)))
+              lambda *a, **kw: called.append(a, kw))
 
         recording = RecordingHandler()
         logging.root.addHandler(recording)
@@ -2595,50 +2407,22 @@ class ModuleLevelMiscTest(BaseTest):
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
 
-class LogRecordTest(BaseTest):
-    def test_str_rep(self):
-        r = logging.makeLogRecord({})
-        s = str(r)
-        self.assertTrue(s.startswith('<LogRecord: '))
-        self.assertTrue(s.endswith('>'))
-
-    def test_dict_arg(self):
-        h = RecordingHandler()
-        r = logging.getLogger()
-        r.addHandler(h)
-        d = {'less' : 'more' }
-        logging.warning('less is %(less)s', d)
-        self.assertIs(h.records[0].args, d)
-        self.assertEqual(h.records[0].message, 'less is more')
-        r.removeHandler(h)
-        h.close()
 
 class BasicConfigTest(unittest.TestCase):
 
-    """Test suite for logging.basicConfig."""
+    """Tets suite for logging.basicConfig."""
 
     def setUp(self):
         super(BasicConfigTest, self).setUp()
-        self.handlers = logging.root.handlers
-        self.saved_handlers = logging._handlers.copy()
-        self.saved_handler_list = logging._handlerList[:]
-        self.original_logging_level = logging.root.level
-        self.addCleanup(self.cleanup)
+        handlers = logging.root.handlers
+        self.addCleanup(lambda: setattr(logging.root, 'handlers', handlers))
         logging.root.handlers = []
 
     def tearDown(self):
-        for h in logging.root.handlers[:]:
-            logging.root.removeHandler(h)
-            h.close()
+        logging.shutdown()
         super(BasicConfigTest, self).tearDown()
 
-    def cleanup(self):
-        setattr(logging.root, 'handlers', self.handlers)
-        logging._handlers.clear()
-        logging._handlers.update(self.saved_handlers)
-        logging._handlerList[:] = self.saved_handler_list
-        logging.root.level = self.original_logging_level
-
+    @unittest.skipIf(True, "test disabled, issue #11557")
     def test_no_kwargs(self):
         logging.basicConfig()
 
@@ -2657,7 +2441,7 @@ class BasicConfigTest(unittest.TestCase):
         self.assertIsInstance(formatter._style, logging.PercentStyle)
 
         # level is not explicitely set
-        self.assertEqual(logging.root.level, self.original_logging_level)
+        self.assertEqual(logging.root.level, logging.WARNING)
 
     def test_filename(self):
         logging.basicConfig(filename='test.log')
@@ -2713,9 +2497,6 @@ class BasicConfigTest(unittest.TestCase):
 
         logging.basicConfig(level=57)
         self.assertEqual(logging.root.level, 57)
-        # Test that second call has no effect
-        logging.basicConfig(level=58)
-        self.assertEqual(logging.root.level, 57)
 
     def test_incompatible(self):
         assertRaises = self.assertRaises
@@ -2729,20 +2510,12 @@ class BasicConfigTest(unittest.TestCase):
                                                      handlers=handlers)
 
     def test_handlers(self):
-        handlers = [
-            logging.StreamHandler(),
-            logging.StreamHandler(sys.stdout),
-            logging.StreamHandler(),
-        ]
-        f = logging.Formatter()
-        handlers[2].setFormatter(f)
+        handlers = [logging.StreamHandler(), logging.StreamHandler(sys.stdout)]
         logging.basicConfig(handlers=handlers)
         self.assertIs(handlers[0], logging.root.handlers[0])
         self.assertIs(handlers[1], logging.root.handlers[1])
-        self.assertIs(handlers[2], logging.root.handlers[2])
         self.assertIsNotNone(handlers[0].formatter)
         self.assertIsNotNone(handlers[1].formatter)
-        self.assertIs(handlers[2].formatter, f)
         self.assertIs(handlers[0].formatter, handlers[1].formatter)
 
     def _test_log(self, method, level=None):
@@ -2974,17 +2747,6 @@ class BaseFileTest(BaseTest):
         self.rmfiles.append(filename)
 
 
-class FileHandlerTest(BaseFileTest):
-    def test_delay(self):
-        os.unlink(self.fn)
-        fh = logging.FileHandler(self.fn, delay=True)
-        self.assertIsNone(fh.stream)
-        self.assertFalse(os.path.exists(self.fn))
-        fh.handle(logging.makeLogRecord({}))
-        self.assertIsNotNone(fh.stream)
-        self.assertTrue(os.path.exists(self.fn))
-        fh.close()
-
 class RotatingFileHandlerTest(BaseFileTest):
     def next_rec(self):
         return logging.LogRecord('n', logging.DEBUG, 'p', 1,
@@ -3078,15 +2840,15 @@ for when, exp in (('S', 1),
 @run_with_locale('LC_ALL', '')
 def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
-                 CustomLevelsAndFiltersTest, HandlerTest, MemoryHandlerTest,
+                 CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 FormatterTest, BufferingFormatterTest, StreamHandlerTest,
+                 FormatterTest,
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
                  LoggerAdapterTest, LoggerTest,
-                 FileHandlerTest, RotatingFileHandlerTest,
-                 LastResortTest, LogRecordTest, ExceptionTest,
+                 RotatingFileHandlerTest,
+                 LastResortTest,
                  TimedRotatingFileHandlerTest
                 )
 

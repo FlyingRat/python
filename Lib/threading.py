@@ -19,7 +19,7 @@ from collections import deque
 
 __all__ = ['active_count', 'Condition', 'current_thread', 'enumerate', 'Event',
            'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread', 'Barrier',
-           'Timer', 'setprofile', 'settrace', 'local', 'stack_size', '_info']
+           'Timer', 'setprofile', 'settrace', 'local', 'stack_size']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
@@ -31,7 +31,6 @@ try:
 except AttributeError:
     _CRLock = None
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
-_info = _thread.info
 del _thread
 
 
@@ -157,8 +156,6 @@ class _RLock(_Verbose):
     def _release_save(self):
         if __debug__:
             self._note("%s._release_save()", self)
-        if self._count == 0:
-            raise RuntimeError("cannot release un-acquired lock")
         count = self._count
         self._count = 0
         owner = self._owner
