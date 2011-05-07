@@ -10,29 +10,6 @@ What's New in Python 3.1.4?
 Core and Builtins
 -----------------
 
-- Issue #9756: When calling a method descriptor or a slot wrapper descriptor,
-  the check of the object type doesn't read the __class__ attribute anymore.
-  Fix a crash if a class override its __class__ attribute (e.g. a proxy of the
-  str type). Patch written by Andreas Stührk.
-
-- Issue #6780: fix starts/endswith error message to mention that tuples are
-  accepted too.
-
-- Issue #5057: fix a bug in the peepholer that led to non-portable pyc files
-  between narrow and wide builds while optimizing BINARY_SUBSCR on non-BMP
-  chars (e.g. "\U00012345"[0]).
-
-- Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
-  (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
-  written by Charles-Francois Natali.
-
-- Issue #8651: PyArg_Parse*() functions raise an OverflowError if the file
-  doesn't have PY_SSIZE_T_CLEAN define and the size doesn't fit in an int
-  (length bigger than 2^31-1 bytes).
-
-- Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
-  there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
-
 - Issue #10451: memoryview objects could allow to mutate a readable buffer.
   Initial patch by Ross Lagerwall.
 
@@ -46,9 +23,6 @@ Core and Builtins
 - Issue #8278: On Windows and with a NTFS filesystem, os.stat() and os.utime()
   can now handle dates after 2038.
 
-- issue #11828: startswith and endswith don't accept None as slice index.
-  Patch by Torsten Becker.
-
 - Issue #4236: PyModule_Create2 now checks the import machinery directly
   rather than the Py_IsInitialized flag, avoiding a Fatal Python
   error in certain circumstances when an import is done in __del__.
@@ -60,106 +34,10 @@ Core and Builtins
 - Issue #5587: add a repr to dict_proxy objects.  Patch by David Stanek and
   Daniel Urban.
 
-- Issue #11506: Trying to assign to a bytes literal should result in a
-  SyntaxError.
-
 Library
 -------
 
-- Issue 11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
-  detect mtime changes by comparing to the system clock instead of to the
-  previous value of the mtime.
-
-- Issue #10684: shutil.move used to delete a folder on case insensitive
-  filesystems when the source and destination name where the same except
-  for the case.
-
-- Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on Mac OS X to get
-  around a mmap bug with sparse files. Patch written by Steffen Daode Nurpmeso.
-
-- Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
-  strings are too long.
-
-- Issue #11236: getpass.getpass responds to ctrl-c or ctrl-z on terminal.
-
-- Issue #11768: The signal handler of the signal module only calls
-  Py_AddPendingCall() for the first signal to fix a deadlock on reentrant or
-  parallel calls. PyErr_SetInterrupt() writes also into the wake up file.
-
-- Issue #11467: Fix urlparse behavior when handling urls which contains scheme
-  specific part only digits. Patch by Santoso Wijaya.
-
-- Issue #11875: collections.OrderedDict's __reduce__ was temporarily
-  mutating the object instead of just working on a copy.
-
-- collections.Counter().copy() now works correctly for subclasses.
-
-- Issue #11474: Fix the bug with url2pathname() handling of '/C|/' on Windows.
-  Patch by Santoso Wijaya.
-
-- Issue #9233: Fix json to work properly even when _json is not available.
-
-- Issue #11703: urllib2.geturl() does not return correct url when the original
-  url contains #fragment.
-
-- Issue #10019: Fixed regression in json module where an indent of 0 stopped
-  adding newlines and acted instead like 'None'.
-
-- Issue #5162: Treat services like frozen executables to allow child spawning
-  from multiprocessing.forking on Windows.
-
-- Issue #10963: Ensure that subprocess.communicate() never raises EPIPE.
-
-- Issue #11696: Fix ID generation in msilib.
-
-- Issue #9696: Fix exception incorrectly raised by xdrlib.Packer.pack_int when
-  trying to pack a negative (in-range) integer.
-
-- Issue #11675: multiprocessing.[Raw]Array objects created from an integer size
-  are now zeroed on creation.  This matches the behaviour specified by the
-  documentation.
-
-- Issue #7639: Fix short file name generation in bdist_msi.
-
-- Issue #11659: Fix ResourceWarning in test_subprocess introduced by #11459.
-  Patch by Ben Hayden.
-
-- Issue #11662: Make urllib and urllib2 ignore redirections if the
-  scheme is not HTTP, HTTPS or FTP (CVE-2011-1521).
-
-- Issue #5537: Fix time2isoz() and time2netscape() functions of
-  httplib.cookiejar for expiration year greater than 2038 on 32-bit systems.
-
-- Issue #11459: A ``bufsize`` value of 0 in subprocess.Popen() really creates
-  unbuffered pipes, such that select() works properly on them.
-
-- Issue #5421: Fix misleading error message when one of socket.sendto()'s
-  arguments has the wrong type.  Patch by Nikita Vetoshkin.
-
-- Issue #11401: fix handling of headers with no value; this fixes a regression
-  relative to Python2 and the result is now the same as it was in Python2.
-
-- Issue #9298: base64 bodies weren't being folded to line lengths less than 78,
-  which was a regression relative to Python2.  Unlike Python2, the last line
-  of the folded body now ends with a carriage return.
-
-- Issue #11569: use absolute path to the sysctl command in multiprocessing to
-  ensure that it will be found regardless of the shell PATH. This ensures
-  that multiprocessing.cpu_count works on default installs of MacOSX.
-
-- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
-  not installed. Instead, the zipfile.ZIP_STORED compression is used to create
-  the ZipFile. Patch by Natalia B. Bidart.
-
-- Issue #11491: dbm.error is no longer raised when dbm.open is called with
-  the "n" as the flag argument and the file exists. The behavior matches
-  the documentation and general logic.
-
-- Issue #11131: Fix sign of zero in decimal.Decimal plus and minus
-  operations when the rounding mode is ROUND_FLOOR.
-
-- Issue #5622: Fix curses.wrapper to raise correct exception if curses
-  initialization fails.
+- Issue #12002: ftplib's abort() method raises TypeError.
 
 - Issue #11391: Writing to a mmap object created with
   ``mmap.PROT_READ|mmap.PROT_EXEC`` would segfault instead of raising a
@@ -251,14 +129,14 @@ Library
   file descriptors (0, 1, 2) are closed in the parent process.  Initial
   patch by Ross Lagerwall.
 
-- Issue #10753 - Characters ';', '=' and ',' in the PATH_INFO environment
-  variable won't be quoted when the URI is constructed by the wsgiref.util's
+- Issue 10753 - Characters ';','=' and ',' in the PATH_INFO environment
+  variable won't be quoted when the URI is constructed by the wsgiref.util 's
   request_uri method. According to RFC 3986, these characters can be a part of
   params in PATH component of URI and need not be quoted.
 
-- Issue #10738: Fix webbrowser.Opera.raise_opts
+- Issue 10738: Fix webbrowser.Opera.raise_opts
 
-- Issue #9824: SimpleCookie now encodes , and ; in values to cater to how
+- Issue 9824: SimpleCookie now encodes , and ; in values to cater to how
   browsers actually parse cookies.
 
 - Issue #5258/#10642: if site.py encounters a .pth file that generates an error,
@@ -308,17 +186,8 @@ Library
   OSError exception when The OS had been told to ignore SIGCLD in our process
   or otherwise not wait for exiting child processes.
 
-- Issue #11500: Fixed a bug in the os x proxy bypass code for fully qualified
-  IP addresses in the proxy exception list.
-
 Extensions
 ----------
-
-- Issue #12017: Fix segfault in json.loads() while decoding highly-nested
-  objects using the C accelerations.
-
-- Issue #1838: Prevent segfault in ctypes, when _as_parameter_ on a class is set
-  to an instance of the class.
 
 - Issue #678250: Make mmap flush a noop on ACCESS_READ and ACCESS_COPY.
 
@@ -342,19 +211,8 @@ Build
   support now looks for "__powerpc__" as well as "__ppc__": the latter seems to
   only be present on OS X; the former is the correct one for Linux with GCC.
 
-- Issue #1099: Fix the build on MacOSX when building a framework with pydebug
-  using GCC 4.0.
-
 Tests
 -----
-
-- Fix test_startfile to wait for child process to terminate before finishing.
-
-- Issue #11719: Fix message about unexpected test_msilib skip on non-Windows
-  platforms. Patch by Nadeem Vawda.
-
-- Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
-  false positive if the last directory in the path is inaccessible.
 
 - Issue #10822: Fix test_posix:test_getgroups failure under Solaris.  Patch
   by Ross Lagerwall.
@@ -622,7 +480,7 @@ Library
 - The keyword only restriction for the places argument in
   unittest.TestCase.assert[Not]AlmostEqual methods has been removed.
 
-- Issue #6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
+- Issue 6706: asyncore accept() method no longer raises EWOULDBLOCK/ECONNABORTED
   on incomplete connection attempt but returns None instead.
 
 - Issue #10266: uu.decode didn't close in_file explicitly when it was given
@@ -638,7 +496,7 @@ Library
   xml.sax.saxutils.XMLGenerator as being bound to
   http://www.w3.org/XML/1998/namespace.  Patch by Troy J. Farrell.
 
-- Issue #7761: telnetlib.interact failures on Windows fixed.
+- #7761: telnetlib.interact failures on Windows fixed.
 
 - Issue #5117: Case normalization was needed on ntpath.relpath(). And
   fixed root directory issue on posixpath.relpath(). (Ported working fixes
