@@ -498,14 +498,11 @@ are always available.  They are listed here in alphabetical order.
    of the *value* argument, however there is a standard formatting syntax that
    is used by most built-in types: :ref:`formatspec`.
 
-   The default *format_spec* is an empty string which usually gives the same
-   effect as calling ``str(value)``.
+   .. note::
 
-   A call to ``format(value, format_spec)`` is translated to
-   ``type(value).__format__(format_spec)`` which bypasses the instance
-   dictionary when searching for the value's :meth:`__format__` method.  A
-   :exc:`TypeError` exception is raised if the method is not found or if either
-   the *format_spec* or the return value are not strings.
+      ``format(value, format_spec)`` merely calls
+      ``value.__format__(format_spec)``.
+
 
 .. function:: frozenset([iterable])
    :noindex:
