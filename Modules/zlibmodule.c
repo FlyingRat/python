@@ -420,26 +420,22 @@ PyDoc_STRVAR(comp_compress__doc__,
 static PyObject *
 PyZlib_objcompress(compobject *self, PyObject *args)
 {
-    int err;
-    unsigned int inplen;
+    int err, inplen;
     Py_ssize_t length = DEFAULTALLOC;
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Py_buffer pinput;
     Byte *input;
     unsigned long start_total_out;
 
     if (!PyArg_ParseTuple(args, "y*:compress", &pinput))
         return NULL;
-    if (pinput.len > UINT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Size does not fit in an unsigned int");
-        goto error_outer;
-    }
     input = pinput.buf;
     inplen = pinput.len;
 
-    if (!(RetVal = PyBytes_FromStringAndSize(NULL, length)))
-        goto error_outer;
+    if (!(RetVal = PyBytes_FromStringAndSize(NULL, length))) {
+        PyBuffer_Release(&pinput);
+        return NULL;
+    }
 
     ENTER_ZLIB(self);
 
@@ -488,7 +484,6 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 
  error:
     LEAVE_ZLIB(self);
- error_outer:
     PyBuffer_Release(&pinput);
     return RetVal;
 }
@@ -507,10 +502,9 @@ PyDoc_STRVAR(decomp_decompress__doc__,
 static PyObject *
 PyZlib_objdecompress(compobject *self, PyObject *args)
 {
-    int err, max_length = 0;
-    unsigned int inplen;
+    int err, inplen, max_length = 0;
     Py_ssize_t old_length, length = DEFAULTALLOC;
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Py_buffer pinput;
     Byte *input;
     unsigned long start_total_out;
@@ -518,24 +512,22 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "y*|i:decompress", &pinput,
                           &max_length))
         return NULL;
-    if (pinput.len > UINT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Size does not fit in an unsigned int");
-        goto error_outer;
-    }
     input = pinput.buf;
     inplen = pinput.len;
     if (max_length < 0) {
+        PyBuffer_Release(&pinput);
         PyErr_SetString(PyExc_ValueError,
                         "max_length must be greater than zero");
-        goto error_outer;
+        return NULL;
     }
 
     /* limit amount of data allocated to max_length */
     if (max_length && length > max_length)
         length = max_length;
-    if (!(RetVal = PyBytes_FromStringAndSize(NULL, length)))
-        goto error_outer;
+    if (!(RetVal = PyBytes_FromStringAndSize(NULL, length))) {
+        PyBuffer_Release(&pinput);
+        return NULL;
+    }
 
     ENTER_ZLIB(self);
 
@@ -629,7 +621,6 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 
  error:
     LEAVE_ZLIB(self);
- error_outer:
     PyBuffer_Release(&pinput);
     return RetVal;
 }
