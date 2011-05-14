@@ -193,7 +193,6 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         data = b'x' * size
         try:
             self.assertRaises(OverflowError, zlib.compress, data, 1)
-            self.assertRaises(OverflowError, zlib.decompress, data)
         finally:
             data = None
 
