@@ -630,11 +630,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if test is None:
                     finished += 1
                     continue
-                accumulate_result(test, result)
                 if not quiet:
-                    print("[{1:{0}}{2}/{3}] {4}".format(
-                        test_count_width, test_index, test_count,
-                        len(bad), test))
+                    print("[{1:{0}}{2}] {3}".format(
+                        test_count_width, test_index, test_count, test))
                 if stdout:
                     print(stdout)
                 if stderr:
@@ -644,6 +642,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     raise KeyboardInterrupt   # What else?
                 if result[0] == CHILD_ERROR:
                     raise Exception("Child error on {}: {}".format(test, result[1]))
+                accumulate_result(test, result)
                 test_index += 1
         except KeyboardInterrupt:
             interrupted = True
@@ -653,8 +652,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     else:
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                print("[{1:{0}}{2}/{3}] {4}".format(
-                    test_count_width, test_index, test_count, len(bad), test))
+                print("[{1:{0}}{2}] {3}".format(
+                    test_count_width, test_index, test_count, test))
                 sys.stdout.flush()
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
