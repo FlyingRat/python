@@ -1,9 +1,8 @@
 What's New in IDLE 2.7.2?
 =======================
 
-*Release date: 29-May-2011*
+*Release date: XX-XX-XXXX*
 
-- Issue #6378: Further adjust idle.bat to start associated Python
 
 - Issue #11896: Save on Close failed despite selecting "Yes" in dialog.
 
