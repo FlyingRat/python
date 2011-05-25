@@ -479,10 +479,11 @@ multibytecodec_encode(MultibyteCodec *codec,
     MultibyteEncodeBuffer buf;
     Py_ssize_t finalsize, r = 0;
 
-    if (datalen == 0 && !(flags & MBENC_RESET))
+    if (datalen == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
     buf.excobj = NULL;
+    buf.outobj = NULL;
     buf.inbuf = buf.inbuf_top = *data;
     buf.inbuf_end = buf.inbuf_top + datalen;
 
@@ -514,7 +515,7 @@ multibytecodec_encode(MultibyteCodec *codec,
             break;
     }
 
-    if (codec->encreset != NULL && (flags & MBENC_RESET))
+    if (codec->encreset != NULL)
         for (;;) {
             Py_ssize_t outleft;
 
@@ -784,8 +785,8 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     inbuf_end = inbuf + datalen;
 
     r = multibytecodec_encode(ctx->codec, &ctx->state,
-                    (const Py_UNICODE **)&inbuf, datalen,
-                    ctx->errors, final ? MBENC_FLUSH | MBENC_RESET : 0);
+                    (const Py_UNICODE **)&inbuf,
+                    datalen, ctx->errors, final ? MBENC_FLUSH : 0);
     if (r == NULL) {
         /* recover the original pending buffer */
         if (origpending > 0)
