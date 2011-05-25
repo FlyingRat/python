@@ -17,9 +17,7 @@ void print_subinterp(void)
 int main(int argc, char *argv[])
 {
     PyThreadState *mainstate, *substate;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate;
-#endif
     int i, j;
 
     for (i=0; i<3; i++) {
@@ -30,12 +28,10 @@ int main(int argc, char *argv[])
         Py_Initialize();
         mainstate = PyThreadState_Get();
 
-#ifdef WITH_THREAD
         PyEval_InitThreads();
         PyEval_ReleaseThread(mainstate);
 
         gilstate = PyGILState_Ensure();
-#endif
         print_subinterp();
         PyThreadState_Swap(NULL);
 
@@ -47,9 +43,7 @@ int main(int argc, char *argv[])
 
         PyThreadState_Swap(mainstate);
         print_subinterp();
-#ifdef WITH_THREAD
         PyGILState_Release(gilstate);
-#endif
 
         PyEval_RestoreThread(mainstate);
         Py_Finalize();

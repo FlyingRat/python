@@ -558,11 +558,7 @@ class RawIOBase(IOBase):
             if not data:
                 break
             res += data
-        if res:
-            return bytes(res)
-        else:
-            # b'' or None
-            return data
+        return bytes(res)
 
     def readinto(self, b):
         """Read up to len(b) bytes into bytearray b.
