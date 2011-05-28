@@ -179,7 +179,7 @@ static int compiler_in_loop(struct compiler *);
 static int inplace_binop(struct compiler *, operator_ty);
 static int expr_constant(struct compiler *, expr_ty);
 
-static int compiler_with(struct compiler *, stmt_ty, int);
+static int compiler_with(struct compiler *, stmt_ty);
 static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_seq *args,
                                 asdl_seq *keywords,
@@ -1968,7 +1968,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, except);
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-            s->v.TryExcept.handlers, i);
+                                        s->v.TryExcept.handlers, i);
         if (!handler->v.ExceptHandler.type && i < n-1)
             return compiler_error(c, "default 'except:' must be last");
         c->u->u_lineno_set = 0;
@@ -1985,70 +1985,70 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         }
         ADDOP(c, POP_TOP);
         if (handler->v.ExceptHandler.name) {
-            basicblock *cleanup_end, *cleanup_body;
+        basicblock *cleanup_end, *cleanup_body;
 
-            cleanup_end = compiler_new_block(c);
-            cleanup_body = compiler_new_block(c);
-            if (!(cleanup_end || cleanup_body))
-                return 0;
+        cleanup_end = compiler_new_block(c);
+        cleanup_body = compiler_new_block(c);
+        if(!(cleanup_end || cleanup_body))
+        return 0;
 
-            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            ADDOP(c, POP_TOP);
+        compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+        ADDOP(c, POP_TOP);
 
-            /*
-              try:
-              # body
-              except type as name:
-              try:
-              # body
-              finally:
-              name = None
-              del name
-            */
+        /*
+        try:
+            # body
+        except type as name:
+            try:
+            # body
+            finally:
+            name = None
+            del name
+        */
 
-            /* second try: */
-            ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
-            compiler_use_next_block(c, cleanup_body);
-            if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
-                return 0;
+        /* second try: */
+        ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
+        compiler_use_next_block(c, cleanup_body);
+        if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
+            return 0;
 
-            /* second # body */
-            VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-            ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_EXCEPT);
-            compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
+        /* second # body */
+        VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
+        ADDOP(c, POP_BLOCK);
+        ADDOP(c, POP_EXCEPT);
+        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
 
-            /* finally: */
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
-            compiler_use_next_block(c, cleanup_end);
-            if (!compiler_push_fblock(c, FINALLY_END, cleanup_end))
-                return 0;
+        /* finally: */
+        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        compiler_use_next_block(c, cleanup_end);
+        if (!compiler_push_fblock(c, FINALLY_END, cleanup_end))
+            return 0;
 
-            /* name = None */
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+        /* name = None */
+        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        compiler_nameop(c, handler->v.ExceptHandler.name, Store);
 
-            /* del name */
-            compiler_nameop(c, handler->v.ExceptHandler.name, Del);
+        /* del name */
+        compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
-            ADDOP(c, END_FINALLY);
-            compiler_pop_fblock(c, FINALLY_END, cleanup_end);
+        ADDOP(c, END_FINALLY);
+        compiler_pop_fblock(c, FINALLY_END, cleanup_end);
         }
         else {
-            basicblock *cleanup_body;
+        basicblock *cleanup_body;
 
-            cleanup_body = compiler_new_block(c);
-            if (!cleanup_body)
-                return 0;
+        cleanup_body = compiler_new_block(c);
+        if(!cleanup_body)
+        return 0;
 
             ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
-            compiler_use_next_block(c, cleanup_body);
-            if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
-                return 0;
+        ADDOP(c, POP_TOP);
+        compiler_use_next_block(c, cleanup_body);
+        if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
+            return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
-            ADDOP(c, POP_EXCEPT);
-            compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
+        ADDOP(c, POP_EXCEPT);
+        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
         }
         ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, except);
@@ -2341,7 +2341,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Continue_kind:
         return compiler_continue(c);
     case With_kind:
-        return compiler_with(c, s, 0);
+        return compiler_with(c, s);
     }
     return 1;
 }
@@ -3068,10 +3068,9 @@ expr_constant(struct compiler *c, expr_ty e)
        exit(*exc)
  */
 static int
-compiler_with(struct compiler *c, stmt_ty s, int pos)
+compiler_with(struct compiler *c, stmt_ty s)
 {
     basicblock *block, *finally;
-    withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
@@ -3081,7 +3080,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
 
     /* Evaluate EXPR */
-    VISIT(c, expr, item->context_expr);
+    VISIT(c, expr, s->v.With.context_expr);
     ADDOP_JREL(c, SETUP_WITH, finally);
 
     /* SETUP_WITH pushes a finally block. */
@@ -3090,20 +3089,16 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     }
 
-    if (item->optional_vars) {
-        VISIT(c, expr, item->optional_vars);
+    if (s->v.With.optional_vars) {
+        VISIT(c, expr, s->v.With.optional_vars);
     }
     else {
     /* Discard result from context.__enter__() */
         ADDOP(c, POP_TOP);
     }
 
-    pos++;
-    if (pos == asdl_seq_LEN(s->v.With.items))
-        /* BLOCK code */
-        VISIT_SEQ(c, stmt, s->v.With.body)
-    else if (!compiler_with(c, s, pos))
-            return 0;
+    /* BLOCK code */
+    VISIT_SEQ(c, stmt, s->v.With.body);
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);

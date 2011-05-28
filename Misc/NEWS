@@ -10,14 +10,6 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #9670: Increase the default stack size for secondary threads on
-  Mac OS X and FreeBSD to reduce the chances of a crash instead of a
-  "maximum recursion depth" RuntimeError exception.
-  (patch by Ronald Oussoren)
-
-- Issue #12106: The use of the multiple-with shorthand syntax is now reflected
-  in the AST.
-
 - Issue #12190: Try to use the same filename object when compiling unmarshalling
   a code objects in the same file.
 
@@ -171,9 +163,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #985064: Make plistlib more resilient to faulty input plists.
-  Patch by Mher Movsisyan.
 
 - Issue #1625: BZ2File and bz2.decompress() now support multi-stream files.
   Initial patch by Nir Aides.
@@ -720,10 +709,6 @@ Library
 
 Build
 -----
-
-- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
-  ensure "make install" creates symlinks in --prefix bin for the "-32"
-  files in the framework bin directory like the installer does.
 
 - Issue #11347: Use --no-as-needed when linking libpython3.so.
 
