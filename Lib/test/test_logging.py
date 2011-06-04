@@ -158,7 +158,8 @@ class BaseTest(unittest.TestCase):
         except AttributeError:
             # StringIO.StringIO lacks a reset() method.
             actual_lines = stream.getvalue().splitlines()
-        self.assertEqual(len(actual_lines), len(expected_values))
+        self.assertEqual(len(actual_lines), len(expected_values),
+                          '%s vs. %s' % (actual_lines, expected_values))
         for actual, expected in zip(actual_lines, expected_values):
             match = pat.search(actual)
             if not match:
@@ -598,8 +599,8 @@ class StreamHandlerTest(BaseTest):
             h = logging.StreamHandler(BadStream())
             sys.stderr = sio = io.StringIO()
             h.handle(r)
-            self.assertIn('\nRuntimeError: deliberate mistake\n',
-                          sio.getvalue())
+            self.assertTrue('\nRuntimeError: '
+                            'deliberate mistake\n' in sio.getvalue())
             logging.raiseExceptions = False
             sys.stderr = sio = io.StringIO()
             h.handle(r)
@@ -939,7 +940,7 @@ class SMTPHandlerTest(BaseTest):
         peer, mailfrom, rcpttos, data = self.messages[0]
         self.assertEqual(mailfrom, 'me')
         self.assertEqual(rcpttos, ['you'])
-        self.assertIn('\nSubject: Log\n', data)
+        self.assertTrue('\nSubject: Log\n' in data)
         self.assertTrue(data.endswith('\n\nHello'))
         h.close()
 
@@ -1691,7 +1692,7 @@ class WarningsTest(BaseTest):
     def test_warnings(self):
         with warnings.catch_warnings():
             logging.captureWarnings(True)
-            self.addCleanup(logging.captureWarnings, False)
+            self.addCleanup(lambda: logging.captureWarnings(False))
             warnings.filterwarnings("always", category=UserWarning)
             stream = io.StringIO()
             h = logging.StreamHandler(stream)
@@ -1715,14 +1716,14 @@ class WarningsTest(BaseTest):
     def test_warnings_no_handlers(self):
         with warnings.catch_warnings():
             logging.captureWarnings(True)
-            self.addCleanup(logging.captureWarnings, False)
+            self.addCleanup(lambda: logging.captureWarnings(False))
 
             # confirm our assumption: no loggers are set
             logger = logging.getLogger("py.warnings")
-            self.assertEqual(logger.handlers, [])
+            assert logger.handlers == []
 
             warnings.showwarning("Explicit", UserWarning, "dummy.py", 42)
-            self.assertEqual(len(logger.handlers), 1)
+            self.assertTrue(len(logger.handlers) == 1)
             self.assertIsInstance(logger.handlers[0], logging.NullHandler)
 
 
@@ -2970,7 +2971,7 @@ class ShutdownTest(BaseTest):
         self.called = []
 
         raise_exceptions = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExceptions', raise_exceptions)
+        self.addCleanup(lambda: setattr(logging, 'raiseExceptions', raise_exceptions))
 
     def raise_error(self, error):
         def inner():
@@ -3055,8 +3056,8 @@ class ModuleLevelMiscTest(BaseTest):
     def test_disable(self):
         old_disable = logging.root.manager.disable
         # confirm our assumptions are correct
-        self.assertEqual(old_disable, 0)
-        self.addCleanup(logging.disable, old_disable)
+        assert old_disable == 0
+        self.addCleanup(lambda: logging.disable(old_disable))
 
         logging.disable(83)
         self.assertEqual(logging.root.manager.disable, 83)
@@ -3265,7 +3266,7 @@ class BasicConfigTest(unittest.TestCase):
 
     def test_level(self):
         old_level = logging.root.level
-        self.addCleanup(logging.root.setLevel, old_level)
+        self.addCleanup(lambda: logging.root.setLevel(old_level))
 
         logging.basicConfig(level=57)
         self.assertEqual(logging.root.level, 57)
@@ -3310,7 +3311,7 @@ class BasicConfigTest(unittest.TestCase):
             old_basic_config()
             old_level = logging.root.level
             logging.root.setLevel(100)  # avoid having messages in stderr
-            self.addCleanup(logging.root.setLevel, old_level)
+            self.addCleanup(lambda: logging.root.setLevel(old_level))
             called.append((a, kw))
 
         patch(self, logging, 'basicConfig', my_basic_config)
@@ -3352,7 +3353,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.recording = RecordingHandler()
         self.logger = logging.root
         self.logger.addHandler(self.recording)
-        self.addCleanup(self.logger.removeHandler, self.recording)
+        self.addCleanup(lambda: self.logger.removeHandler(self.recording))
         self.addCleanup(self.recording.close)
 
         def cleanup():
@@ -3366,8 +3367,8 @@ class LoggerAdapterTest(unittest.TestCase):
         msg = 'testing exception: %r'
         exc = None
         try:
-            1 / 0
-        except ZeroDivisionError as e:
+            assert False
+        except AssertionError as e:
             exc = e
             self.adapter.exception(msg, self.recording)
 
@@ -3392,8 +3393,8 @@ class LoggerAdapterTest(unittest.TestCase):
     def test_is_enabled_for(self):
         old_disable = self.adapter.logger.manager.disable
         self.adapter.logger.manager.disable = 33
-        self.addCleanup(setattr, self.adapter.logger.manager, 'disable',
-                        old_disable)
+        self.addCleanup(lambda: setattr(self.adapter.logger.manager,
+                                        'disable', old_disable))
         self.assertFalse(self.adapter.isEnabledFor(32))
 
     def test_has_handlers(self):
@@ -3401,8 +3402,8 @@ class LoggerAdapterTest(unittest.TestCase):
 
         for handler in self.logger.handlers:
             self.logger.removeHandler(handler)
+        assert not self.logger.hasHandlers()
 
-        self.assertFalse(self.logger.hasHandlers())
         self.assertFalse(self.adapter.hasHandlers())
 
 
@@ -3413,7 +3414,7 @@ class LoggerTest(BaseTest):
         self.recording = RecordingHandler()
         self.logger = logging.Logger(name='blah')
         self.logger.addHandler(self.recording)
-        self.addCleanup(self.logger.removeHandler, self.recording)
+        self.addCleanup(lambda: self.logger.removeHandler(self.recording))
         self.addCleanup(self.recording.close)
         self.addCleanup(logging.shutdown)
 
@@ -3424,8 +3425,8 @@ class LoggerTest(BaseTest):
         msg = 'testing exception: %r'
         exc = None
         try:
-            1 / 0
-        except ZeroDivisionError as e:
+            assert False
+        except AssertionError as e:
             exc = e
             self.logger.exception(msg, self.recording)
 
@@ -3439,14 +3440,14 @@ class LoggerTest(BaseTest):
 
     def test_log_invalid_level_with_raise(self):
         old_raise = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExecptions', old_raise)
+        self.addCleanup(lambda: setattr(logging, 'raiseExecptions', old_raise))
 
         logging.raiseExceptions = True
         self.assertRaises(TypeError, self.logger.log, '10', 'test message')
 
     def test_log_invalid_level_no_raise(self):
         old_raise = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExecptions', old_raise)
+        self.addCleanup(lambda: setattr(logging, 'raiseExecptions', old_raise))
 
         logging.raiseExceptions = False
         self.logger.log('10', 'test message')  # no exception happens
@@ -3488,17 +3489,22 @@ class LoggerTest(BaseTest):
 
         for handler in self.logger.handlers:
             self.logger.removeHandler(handler)
+        assert not self.logger.hasHandlers()
+
         self.assertFalse(self.logger.hasHandlers())
 
     def test_has_handlers_no_propagate(self):
         child_logger = logging.getLogger('blah.child')
         child_logger.propagate = False
+        assert child_logger.handlers == []
+
         self.assertFalse(child_logger.hasHandlers())
 
     def test_is_enabled_for(self):
         old_disable = self.logger.manager.disable
         self.logger.manager.disable = 23
-        self.addCleanup(setattr, self.logger.manager, 'disable', old_disable)
+        self.addCleanup(lambda: setattr(self.logger.manager,
+                                        'disable', old_disable))
         self.assertFalse(self.logger.isEnabledFor(22))
 
 

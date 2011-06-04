@@ -10,9 +10,6 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #12265: Make error messages produced by passing an invalid set of
-  arguments to a function more informative.
-
 - Issue #12225: Still allow Python to build if Python is not in its hg repo or
   mercurial is not installed.
 
@@ -47,8 +44,8 @@ Core and Builtins
 - Issue #12060: Use sig_atomic_t type and volatile keyword in the signal
   module. Patch written by Charles-François Natali.
 
-- Issue #1746656: Added the if_nameindex, if_indextoname, if_nametoindex
-  methods to the socket module.
+- Added the if_nameindex, if_indextoname, if_nametoindex methods to
+  the socket module as requested in issue #1746656.
 
 - Issue #12044: Fixed subprocess.Popen when used as a context manager to
   wait for the process to end when exiting the context to avoid unintentionally
@@ -186,9 +183,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #12080: Fix a Decimal.power() case that took an unreasonably long time
-  to compute.
 
 - Issue #12221: Remove __version__ attributes from pyexpat, pickle, tarfile,
   pydoc, tkinter, and xml.parsers.expat. This were useless version constants

@@ -371,6 +371,12 @@ have created a new socket to ``connect`` to someone else, put it in the
 potential_writers list. If it shows up in the writable list, you have a decent
 chance that it has connected.
 
+One very nasty problem with ``select``: if somewhere in those input lists of
+sockets is one which has died a nasty death, the ``select`` will fail. You then
+need to loop through every single damn socket in all those lists and do a
+``select([sock],[],[],0)`` until you find the bad one. That timeout of 0 means
+it won't take long, but it's ugly.
+
 Actually, ``select`` can be handy even with blocking sockets. It's one way of
 determining whether you will block - the socket returns as readable when there's
 something in the buffers.  However, this still doesn't help with the problem of
@@ -380,6 +386,32 @@ determining whether the other end is done, or just busy with something else.
 files. Don't try this on Windows. On Windows, ``select`` works with sockets
 only. Also note that in C, many of the more advanced socket options are done
 differently on Windows. In fact, on Windows I usually use threads (which work
-very, very well) with my sockets.
+very, very well) with my sockets. Face it, if you want any kind of performance,
+your code will look very different on Windows than on Unix.
 
+
+Performance
+-----------
+
+There's no question that the fastest sockets code uses non-blocking sockets and
+select to multiplex them. You can put together something that will saturate a
+LAN connection without putting any strain on the CPU. The trouble is that an app
+written this way can't do much of anything else - it needs to be ready to
+shuffle bytes around at all times.
+
+Assuming that your app is actually supposed to do something more than that,
+threading is the optimal solution, (and using non-blocking sockets will be
+faster than using blocking sockets). Unfortunately, threading support in Unixes
+varies both in API and quality. So the normal Unix solution is to fork a
+subprocess to deal with each connection. The overhead for this is significant
+(and don't do this on Windows - the overhead of process creation is enormous
+there). It also means that unless each subprocess is completely independent,
+you'll need to use another form of IPC, say a pipe, or shared memory and
+semaphores, to communicate between the parent and child processes.
+
+Finally, remember that even though blocking sockets are somewhat slower than
+non-blocking, in many cases they are the "right" solution. After all, if your
+app is driven by the data it receives over a socket, there's not much sense in
+complicating the logic just so your app can wait on ``select`` instead of
+``recv``.
 
