@@ -35,7 +35,7 @@ class DistributionTestCase(support.TempdirManager,
                            support.EnvironRestorer,
                            unittest.TestCase):
 
-    restore_environ = ['HOME', 'PLAT']
+    restore_environ = ['HOME']
 
     def setUp(self):
         super(DistributionTestCase, self).setUp()
