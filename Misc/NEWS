@@ -10,6 +10,9 @@ What's New in Python 3.2.1 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #12084: os.stat on Windows now works properly with relative symbolic
+  links when called from any directory.
+
 - Issue #1195: my_fgets() now always clears errors before calling fgets(). Fix
   the following case: sys.stdin.read() stopped with CTRL+d (end of file),
   raw_input() interrupted by CTRL+c.
@@ -21,21 +24,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #9284: Allow inspect.findsource() to find the source of doctest
-  functions.
-
-- Issue #12009: Fixed regression in netrc file comment handling.
-
-- Issue #10694: zipfile now ignores garbage at the end of a zipfile.
-
-- Issue #12283: Fixed regression in smtplib quoting of leading dots in DATA.
-
-- Issue #12168: SysLogHandler now allows NUL termination to be controlled using
-  a new 'append_nul' attribute on the handler.
-
-- Issue #11583: Speed up os.path.isdir on Windows by using GetFileAttributes
-  instead of os.stat.
 
 - Named tuples now work correctly with vars().
 
