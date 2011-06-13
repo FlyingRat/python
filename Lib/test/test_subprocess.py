@@ -127,10 +127,9 @@ class ProcessTestCase(BaseTestCase):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             output = subprocess.check_output(
                     [sys.executable, "-c",
-                     "import sys, time\n"
-                     "sys.stdout.write('BDFL')\n"
+                     "import sys; sys.stdout.write('BDFL')\n"
                      "sys.stdout.flush()\n"
-                     "time.sleep(3600)"],
+                     "while True: pass"],
                     # Some heavily loaded buildbots (sparc Debian 3.x) require
                     # this much time to start and print.
                     timeout=3)

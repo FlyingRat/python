@@ -509,14 +509,11 @@ typedef struct _REPARSE_DATA_BUFFER {
 #define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
 
 static int
-win32_read_link(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **target_path)
+win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 {
     char target_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     REPARSE_DATA_BUFFER *rdb = (REPARSE_DATA_BUFFER *)target_buffer;
     DWORD n_bytes_returned;
-    const wchar_t *ptr;
-    wchar_t *buf;
-    size_t len;
 
     if (0 == DeviceIoControl(
         reparse_point_handle,
@@ -525,41 +522,12 @@ win32_read_link(HANDLE reparse_point_handle, ULONG *reparse_tag, wchar_t **targe
         target_buffer, sizeof(target_buffer),
         &n_bytes_returned,
         NULL)) /* we're not using OVERLAPPED_IO */
-        return -1;
+        return FALSE;
 
     if (reparse_tag)
         *reparse_tag = rdb->ReparseTag;
 
-    if (target_path) {
-        switch (rdb->ReparseTag) {
-        case IO_REPARSE_TAG_SYMLINK:
-            /* XXX: Maybe should use SubstituteName? */
-            ptr = rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                  rdb->SymbolicLinkReparseBuffer.PrintNameOffset/sizeof(WCHAR);
-            len = rdb->SymbolicLinkReparseBuffer.PrintNameLength/sizeof(WCHAR);
-            break;
-        case IO_REPARSE_TAG_MOUNT_POINT:
-            ptr = rdb->MountPointReparseBuffer.PathBuffer +
-                  rdb->MountPointReparseBuffer.SubstituteNameOffset/sizeof(WCHAR);
-            len = rdb->MountPointReparseBuffer.SubstituteNameLength/sizeof(WCHAR);
-            break;
-        default:
-            SetLastError(ERROR_REPARSE_TAG_MISMATCH); /* XXX: Proper error code? */
-            return -1;
-        }
-        buf = (wchar_t *)malloc(sizeof(wchar_t)*(len+1));
-        if (!buf) {
-            SetLastError(ERROR_OUTOFMEMORY);
-            return -1;
-        }
-        wcsncpy(buf, ptr, len);
-        buf[len] = L'\0';
-        if (wcsncmp(buf, L"\\??\\", 4) == 0)
-            buf[1] = L'\\';
-        *target_path = buf;
-    }
-
-    return 0;
+    return TRUE;
 }
 #endif /* MS_WINDOWS */
 
@@ -1125,36 +1093,97 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *
     return TRUE;
 }
 
-#ifndef SYMLOOP_MAX
-#define SYMLOOP_MAX ( 88 )
-#endif
-
+/* Grab GetFinalPathNameByHandle dynamically from kernel32 */
+static int has_GetFinalPathNameByHandle = 0;
+static DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
+                                                      DWORD);
+static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
+                                                      DWORD);
 static int
-win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int depth);
-
-static int
-win32_xstat_impl(const char *path, struct win32_stat *result, BOOL traverse, int depth)
+check_GetFinalPathNameByHandle()
 {
-    int code;
-    HANDLE hFile;
+    HINSTANCE hKernel32;
+    /* only recheck */
+    if (!has_GetFinalPathNameByHandle)
+    {
+        hKernel32 = GetModuleHandle("KERNEL32");
+        *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
+                                                "GetFinalPathNameByHandleA");
+        *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
+                                                "GetFinalPathNameByHandleW");
+        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA &&
+                                       Py_GetFinalPathNameByHandleW;
+    }
+    return has_GetFinalPathNameByHandle;
+}
+
+static BOOL
+get_target_path(HANDLE hdl, wchar_t **target_path)
+{
+    int buf_size, result_length;
+    wchar_t *buf;
+
+    /* We have a good handle to the target, use it to determine
+       the target path name (then we'll call lstat on it). */
+    buf_size = Py_GetFinalPathNameByHandleW(hdl, 0, 0,
+                                            VOLUME_NAME_DOS);
+    if(!buf_size)
+        return FALSE;
+
+    buf = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
+    result_length = Py_GetFinalPathNameByHandleW(hdl,
+                       buf, buf_size, VOLUME_NAME_DOS);
+
+    if(!result_length) {
+        free(buf);
+        return FALSE;
+    }
+
+    if(!CloseHandle(hdl)) {
+        free(buf);
+        return FALSE;
+    }
+
+    buf[result_length] = 0;
+
+    *target_path = buf;
+    return TRUE;
+}
+
+static int
+win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
+                   BOOL traverse);
+static int
+win32_xstat_impl(const char *path, struct win32_stat *result,
+                 BOOL traverse)
+{
+    int code; 
+    HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-    wchar_t *target_path;
+	wchar_t *target_path;
     const char *dot;
 
-    if (depth > SYMLOOP_MAX) {
-        SetLastError(ERROR_CANT_RESOLVE_FILENAME); /* XXX: ELOOP? */
+    if(!check_GetFinalPathNameByHandle()) {
+        /* If the OS doesn't have GetFinalPathNameByHandle, return a
+           NotImplementedError. */
+        PyErr_SetString(PyExc_NotImplementedError,
+            "GetFinalPathNameByHandle not available on this platform");
         return -1;
     }
 
     hFile = CreateFileA(
         path,
-        0, /* desired access */
+        FILE_READ_ATTRIBUTES, /* desired access */
         0, /* share mode */
         NULL, /* security attributes */
         OPEN_EXISTING,
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,
+        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
+           Because of this, calls like GetFinalPathNameByHandle will return
+           the symlink path agin and not the actual final path. */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
+            FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -1178,15 +1207,32 @@ win32_xstat_impl(const char *path, struct win32_stat *result, BOOL traverse, int
     } else {
         if (!GetFileInformationByHandle(hFile, &info)) {
             CloseHandle(hFile);
-            return -1;;
+            return -1;
         }
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            code = win32_read_link(hFile, &reparse_tag, traverse ? &target_path : NULL);
-            CloseHandle(hFile);
-            if (code < 0)
-                return code;
+            if (!win32_get_reparse_tag(hFile, &reparse_tag))
+                return -1;
+
+            /* Close the outer open file handle now that we're about to
+               reopen it with different flags. */
+            if (!CloseHandle(hFile))
+                return -1;
+
             if (traverse) {
-                code = win32_xstat_impl_w(target_path, result, traverse, depth + 1);
+                /* In order to call GetFinalPathNameByHandle we need to open
+                   the file without the reparse handling flag set. */
+                hFile2 = CreateFileA(
+                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
+                           NULL, OPEN_EXISTING,
+                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
+                           NULL);
+                if (hFile2 == INVALID_HANDLE_VALUE)
+                    return -1;
+
+                if (!get_target_path(hFile2, &target_path))
+                    return -1;
+
+                code = win32_xstat_impl_w(target_path, result, FALSE);
                 free(target_path);
                 return code;
             }
@@ -1206,28 +1252,36 @@ win32_xstat_impl(const char *path, struct win32_stat *result, BOOL traverse, int
 }
 
 static int
-win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result, BOOL traverse, int depth)
+win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
+                   BOOL traverse)
 {
     int code;
-    HANDLE hFile;
+    HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
 	wchar_t *target_path;
     const wchar_t *dot;
 
-    if (depth > SYMLOOP_MAX) {
-        SetLastError(ERROR_CANT_RESOLVE_FILENAME); /* XXX: ELOOP? */
+    if(!check_GetFinalPathNameByHandle()) {
+        /* If the OS doesn't have GetFinalPathNameByHandle, return a
+           NotImplementedError. */
+        PyErr_SetString(PyExc_NotImplementedError,
+            "GetFinalPathNameByHandle not available on this platform");
         return -1;
     }
 
     hFile = CreateFileW(
         path,
-        0, /* desired access */
+        FILE_READ_ATTRIBUTES, /* desired access */
         0, /* share mode */
         NULL, /* security attributes */
         OPEN_EXISTING,
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,
+        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
+           Because of this, calls like GetFinalPathNameByHandle will return
+           the symlink path agin and not the actual final path. */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS| 
+            FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -1251,15 +1305,32 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result, BOOL traverse
     } else {
         if (!GetFileInformationByHandle(hFile, &info)) {
             CloseHandle(hFile);
-            return -1;;
+            return -1;
         }
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            code = win32_read_link(hFile, &reparse_tag, traverse ? &target_path : NULL);
-            CloseHandle(hFile);
-            if (code < 0)
-                return code;
+            if (!win32_get_reparse_tag(hFile, &reparse_tag))
+                return -1;
+
+            /* Close the outer open file handle now that we're about to
+               reopen it with different flags. */
+            if (!CloseHandle(hFile))
+                return -1;
+
             if (traverse) {
-                code = win32_xstat_impl_w(target_path, result, traverse, depth + 1);
+                /* In order to call GetFinalPathNameByHandle we need to open
+                   the file without the reparse handling flag set. */
+                hFile2 = CreateFileW(
+                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
+                           NULL, OPEN_EXISTING,
+                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
+                           NULL);
+                if (hFile2 == INVALID_HANDLE_VALUE)
+                    return -1;
+
+                if (!get_target_path(hFile2, &target_path))
+                    return -1;
+
+                code = win32_xstat_impl_w(target_path, result, FALSE);
                 free(target_path);
                 return code;
             }
@@ -1283,7 +1354,7 @@ win32_xstat(const char *path, struct win32_stat *result, BOOL traverse)
 {
     /* Protocol violation: we explicitly clear errno, instead of
        setting it to a POSIX error. Callers should use GetLastError. */
-    int code = win32_xstat_impl(path, result, traverse, 0);
+    int code = win32_xstat_impl(path, result, traverse);
     errno = 0;
     return code;
 }
@@ -1293,13 +1364,11 @@ win32_xstat_w(const wchar_t *path, struct win32_stat *result, BOOL traverse)
 {
     /* Protocol violation: we explicitly clear errno, instead of
        setting it to a POSIX error. Callers should use GetLastError. */
-    int code = win32_xstat_impl_w(path, result, traverse, 0);
+    int code = win32_xstat_impl_w(path, result, traverse);
     errno = 0;
     return code;
 }
-
-/* About the following functions: win32_lstat, win32_lstat_w, win32_stat,
-   win32_stat_w
+/* About the following functions: win32_lstat_w, win32_stat, win32_stat_w
 
    In Posix, stat automatically traverses symlinks and returns the stat
    structure for the target.  In Windows, the equivalent GetFileAttributes by
@@ -2848,29 +2917,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
     return PyBytes_FromString(outbuf);
 } /* end of posix__getfullpathname */
 
-/* Grab GetFinalPathNameByHandle dynamically from kernel32 */
-static int has_GetFinalPathNameByHandle = 0;
-static DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
-                                                      DWORD);
-static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
-                                                      DWORD);
-static int
-check_GetFinalPathNameByHandle()
-{
-    HINSTANCE hKernel32;
-    /* only recheck */
-    if (!has_GetFinalPathNameByHandle)
-    {
-        hKernel32 = GetModuleHandle("KERNEL32");
-        *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
-                                                "GetFinalPathNameByHandleA");
-        *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
-                                                "GetFinalPathNameByHandleW");
-        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA &&
-                                       Py_GetFinalPathNameByHandleW;
-    }
-    return has_GetFinalPathNameByHandle;
-}
+
 
 /* A helper function for samepath on windows */
 static PyObject *
@@ -2959,45 +3006,6 @@ posix__getfileinformation(PyObject *self, PyObject *args)
     return Py_BuildValue("iii", info.dwVolumeSerialNumber,
                                 info.nFileIndexHigh,
                                 info.nFileIndexLow);
-}
-
-PyDoc_STRVAR(posix__isdir__doc__,
-"Return true if the pathname refers to an existing directory.");
-
-static PyObject *
-posix__isdir(PyObject *self, PyObject *args)
-{
-    PyObject *opath;
-    char *path;
-    PyUnicodeObject *po;
-    DWORD attributes;
-
-    if (PyArg_ParseTuple(args, "U|:_isdir", &po)) {
-        Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
-
-        attributes = GetFileAttributesW(wpath);
-        if (attributes == INVALID_FILE_ATTRIBUTES)
-            Py_RETURN_FALSE;
-        goto check;
-    }
-    /* Drop the argument parsing error as narrow strings
-       are also valid. */
-    PyErr_Clear();
-
-    if (!PyArg_ParseTuple(args, "O&:_isdir",
-                          PyUnicode_FSConverter, &opath))
-        return NULL;
-
-    path = PyBytes_AsString(opath);
-    attributes = GetFileAttributesA(path);
-    if (attributes == INVALID_FILE_ATTRIBUTES)
-        Py_RETURN_FALSE;
-
-check:
-    if (attributes & FILE_ATTRIBUTE_DIRECTORY)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
 }
 #endif /* MS_WINDOWS */
 
@@ -4672,70 +4680,6 @@ posix_getpid(PyObject *self, PyObject *noargs)
     return PyLong_FromPid(getpid());
 }
 
-#ifdef HAVE_GETGROUPLIST
-PyDoc_STRVAR(posix_getgrouplist__doc__,
-"getgrouplist(user, group) -> list of groups to which a user belongs\n\n\
-Returns a list of groups to which a user belongs.\n\n\
-    user: username to lookup\n\
-    group: base group id of the user");
-
-static PyObject *
-posix_getgrouplist(PyObject *self, PyObject *args)
-{
-#ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
-#else
-    /* defined to be 16 on Solaris7, so this should be a small number */
-#define MAX_GROUPS 64
-#endif
-
-    const char *user;
-    int i, ngroups;
-    PyObject *list;
-#ifdef __APPLE__
-    int *groups, basegid;
-#else
-    gid_t *groups, basegid;
-#endif
-    ngroups = MAX_GROUPS;
-
-    if (!PyArg_ParseTuple(args, "si", &user, &basegid))
-        return NULL;
-
-#ifdef __APPLE__
-    groups = PyMem_Malloc(ngroups * sizeof(int));
-#else
-    groups = PyMem_Malloc(ngroups * sizeof(gid_t));
-#endif
-    if (groups == NULL)
-        return PyErr_NoMemory();
-
-    if (getgrouplist(user, basegid, groups, &ngroups) == -1) {
-        PyMem_Del(groups);
-        return posix_error();
-    }
-
-    list = PyList_New(ngroups);
-    if (list == NULL) {
-        PyMem_Del(groups);
-        return NULL;
-    }
-
-    for (i = 0; i < ngroups; i++) {
-        PyObject *o = PyLong_FromUnsignedLong((unsigned long)groups[i]);
-        if (o == NULL) {
-            Py_DECREF(list);
-            PyMem_Del(groups);
-            return NULL;
-        }
-        PyList_SET_ITEM(list, i, o);
-    }
-
-    PyMem_Del(groups);
-
-    return list;
-}
-#endif
 
 #ifdef HAVE_GETGROUPS
 PyDoc_STRVAR(posix_getgroups__doc__,
@@ -5610,7 +5554,7 @@ posix_lstat(PyObject *self, PyObject *args)
     return posix_do_stat(self, args, "O&:lstat", lstat, NULL, NULL);
 #else /* !HAVE_LSTAT */
 #ifdef MS_WINDOWS
-    return posix_do_stat(self, args, "O&:lstat", STAT, "U:lstat",
+    return posix_do_stat(self, args, "O&:lstat", win32_lstat, "U:lstat",
                          win32_lstat_w);
 #else
     return posix_do_stat(self, args, "O&:lstat", STAT, NULL, NULL);
@@ -6652,21 +6596,20 @@ posix_pipe(PyObject *self, PyObject *noargs)
 
 #ifdef HAVE_PIPE2
 PyDoc_STRVAR(posix_pipe2__doc__,
-"pipe2(flags) -> (read_end, write_end)\n\n\
-Create a pipe with flags set atomically.\n\
-flags can be constructed by ORing together one or more of these values:\n\
-O_NONBLOCK, O_CLOEXEC.\n\
+"pipe2(flags=0) -> (read_end, write_end)\n\n\
+Create a pipe with flags set atomically.\
+flags is optional and can be constructed by ORing together zero or more\n\
+of these values: O_NONBLOCK, O_CLOEXEC.\n\
 ");
 
 static PyObject *
-posix_pipe2(PyObject *self, PyObject *arg)
+posix_pipe2(PyObject *self, PyObject *args)
 {
-    int flags;
+    int flags = 0;
     int fds[2];
     int res;
 
-    flags = PyLong_AsLong(arg);
-    if (flags == -1 && PyErr_Occurred())
+    if (!PyArg_ParseTuple(args, "|i:pipe2", &flags))
         return NULL;
 
     res = pipe2(fds, flags);
@@ -9447,9 +9390,6 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETGID
     {"getgid",          posix_getgid, METH_NOARGS, posix_getgid__doc__},
 #endif /* HAVE_GETGID */
-#ifdef HAVE_GETGROUPLIST
-    {"getgrouplist",    posix_getgrouplist, METH_VARARGS, posix_getgrouplist__doc__},
-#endif
 #ifdef HAVE_GETGROUPS
     {"getgroups",       posix_getgroups, METH_NOARGS, posix_getgroups__doc__},
 #endif
@@ -9574,7 +9514,7 @@ static PyMethodDef posix_methods[] = {
     {"pipe",            posix_pipe, METH_NOARGS, posix_pipe__doc__},
 #endif
 #ifdef HAVE_PIPE2
-    {"pipe2",           posix_pipe2, METH_O, posix_pipe2__doc__},
+    {"pipe2",           posix_pipe2, METH_VARARGS, posix_pipe2__doc__},
 #endif
 #ifdef HAVE_MKFIFO
     {"mkfifo",          posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},
@@ -9667,7 +9607,6 @@ static PyMethodDef posix_methods[] = {
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
     {"_getfileinformation",     posix__getfileinformation, METH_VARARGS, NULL},
-    {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},

@@ -1,9 +1,8 @@
+import sys
 import os
+import unittest
 import platform
 import subprocess
-import sys
-import unittest
-import warnings
 
 from test import support
 
@@ -251,12 +250,10 @@ class PlatformTest(unittest.TestCase):
             command = '"{}" -c "print(\'Hello\')"'.format(sys.executable)
         else:
             command = "'{}' -c 'print(\"Hello\")'".format(sys.executable)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with platform.popen(command) as stdout:
-                hello = stdout.read().strip()
-                stdout.close()
-                self.assertEqual(hello, "Hello")
+        with platform.popen(command) as stdout:
+            hello = stdout.read().strip()
+            stdout.close()
+            self.assertEqual(hello, "Hello")
 
         data = 'plop'
         if mswindows:
@@ -264,17 +261,15 @@ class PlatformTest(unittest.TestCase):
         else:
             command = "'{}' -c 'import sys; data=sys.stdin.read(); exit(len(data))'"
         command = command.format(sys.executable)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with platform.popen(command, 'w') as stdin:
-                stdout = stdin.write(data)
-                ret = stdin.close()
-                self.assertIsNotNone(ret)
-                if os.name == 'nt':
-                    returncode = ret
-                else:
-                    returncode = ret >> 8
-                self.assertEqual(returncode, len(data))
+        with platform.popen(command, 'w') as stdin:
+            stdout = stdin.write(data)
+            ret = stdin.close()
+            self.assertIsNotNone(ret)
+            if os.name == 'nt':
+                returncode = ret
+            else:
+                returncode = ret >> 8
+            self.assertEqual(returncode, len(data))
 
 
 def test_main():

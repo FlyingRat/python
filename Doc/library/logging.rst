@@ -453,26 +453,6 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       record. Otherwise, the ISO8601 format is used.  The resulting string is
       returned.
 
-      This function uses a user-configurable function to convert the creation
-      time to a tuple. By default, :func:`time.localtime` is used; to change
-      this for a particular formatter instance, set the ``converter`` attribute
-      to a function with the same signature as :func:`time.localtime` or
-      :func:`time.gmtime`. To change it for all formatters, for example if you
-      want all logging times to be shown in GMT, set the ``converter``
-      attribute in the ``Formatter`` class.
-
-      .. versionchanged:: 3.3
-      Previously, the default ISO 8601 format was hard-coded as in this
-      example: ``2010-09-06 22:38:15,292`` where the part before the comma is
-      handled by a strptime format string (``'%Y-%m-%d %H:%M:%S'``), and the
-      part after the comma is a millisecond value. Because strptime does not
-      have a format placeholder for milliseconds, the millisecond value is
-      appended using another format string, ``'%s,%03d'`` – and both of these
-      format strings have been hardcoded into this method. With the change,
-      these strings are defined as class-level attributes which can be
-      overridden at the instance level when desired. The names of the
-      attributes are ``default_time_format`` (for the strptime format string)
-      and ``default_msec_format`` (for appending the millisecond value).
 
    .. method:: formatException(exc_info)
 
@@ -564,9 +544,6 @@ wire).
    :param name:  The name of the logger used to log the event represented by
                  this LogRecord.
    :param level: The numeric level of the logging event (one of DEBUG, INFO etc.)
-                 Note that this is converted to *two* attributes of the LogRecord:
-                 ``levelno`` for the numeric value and ``levelname`` for the
-                 corresponding level name.
    :param pathname: The full pathname of the source file where the logging call
                     was made.
    :param lineno: The line number in the source file where the logging call was

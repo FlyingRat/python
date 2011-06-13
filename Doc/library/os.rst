@@ -219,17 +219,6 @@ process and user.
    Availability: Unix.
 
 
-.. function:: getgrouplist(user, group)
-
-   Return list of group ids that *user* belongs to. If *group* is not in the
-   list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
 .. function:: getgroups()
 
    Return list of supplemental group ids associated with the current process.
@@ -1030,11 +1019,11 @@ as internal buffering of data.
    Availability: Unix, Windows.
 
 
-.. function:: pipe2(flags)
+.. function:: pipe2(flags=0)
 
    Create a pipe with *flags* set atomically.
-   *flags* can be constructed by ORing together one or more of these values:
-   :data:`O_NONBLOCK`, :data:`O_CLOEXEC`.
+   *flags* is optional and can be constructed by ORing together zero or more of
+   these values: :data:`O_NONBLOCK`, :data:`O_CLOEXEC`.
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 

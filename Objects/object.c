@@ -1,5 +1,5 @@
 
-/* Generic object operations; and implementation of None */
+/* Generic object operations; and implementation of None (NoObject) */
 
 #include "Python.h"
 #include "frameobject.h"
@@ -1205,10 +1205,6 @@ _dir_locals(void)
         Py_DECREF(names);
         return NULL;
     }
-    if (PyList_Sort(names)) {
-        Py_DECREF(names);
-        return NULL;
-    }
     /* the locals don't need to be DECREF'd */
     return names;
 }
@@ -1217,7 +1213,7 @@ _dir_locals(void)
 static PyObject *
 _dir_object(PyObject *obj)
 {
-    PyObject *result, *sorted;
+    PyObject *result;
     static PyObject *dir_str = NULL;
     PyObject *dirfunc = _PyObject_LookupSpecial(obj, "__dir__", &dir_str);
 
@@ -1232,16 +1228,18 @@ _dir_object(PyObject *obj)
     Py_DECREF(dirfunc);
     if (result == NULL)
         return NULL;
-    /* return sorted(result) */
-    sorted = PySequence_List(result);
-    Py_DECREF(result);
-    if (sorted == NULL)
-        return NULL;
-    if (PyList_Sort(sorted)) {
-        Py_DECREF(sorted);
-        return NULL;
+
+    /* result must be a list */
+    /* XXX(gbrandl): could also check if all items are strings */
+    if (!PyList_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__dir__() must return a list, not %.200s",
+                     Py_TYPE(result)->tp_name);
+        Py_DECREF(result);
+        result = NULL;
     }
-    return sorted;
+
+    return result;
 }
 
 /* Implementation of dir() -- if obj is NULL, returns the names in the current
@@ -1251,13 +1249,31 @@ _dir_object(PyObject *obj)
 PyObject *
 PyObject_Dir(PyObject *obj)
 {
-    return (obj == NULL) ? _dir_locals() : _dir_object(obj);
+    PyObject * result;
+
+    if (obj == NULL)
+        /* no object -- introspect the locals */
+        result = _dir_locals();
+    else
+        /* object -- introspect the object */
+        result = _dir_object(obj);
+
+    assert(result == NULL || PyList_Check(result));
+
+    if (result != NULL && PyList_Sort(result) != 0) {
+        /* sorting the list failed */
+        Py_DECREF(result);
+        result = NULL;
+    }
+
+    return result;
 }
 
 /*
-None is as a non-NULL undefined value.
+NoObject is usable as a non-NULL undefined value, used by the macro None.
 There is (and should be!) no way to create other objects of this type,
 so there is exactly one (which is indestructible, by the way).
+(XXX This type and the type of NotImplemented below should be unified.)
 */
 
 /* ARGSUSED */

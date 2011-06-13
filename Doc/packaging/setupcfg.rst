@@ -141,16 +141,13 @@ files
    Modules, scripts, data, documentation and other files to include in the
    distribution.
 
-extension sections
-   Options used to build extension modules.
-
 command sections
    Options given for specific commands, identical to those that can be given
    on the command line.
 
 
 Global options
---------------
+==============
 
 Contains global options for Packaging. This section is shared with Distutils.
 
@@ -176,23 +173,19 @@ compilers
       compilers =
           hotcompiler.SmartCCompiler
 
-setup_hooks
-   Defines a list of callables to be called right after the :file:`setup.cfg`
-   file is read, before any other processing.  The callables are executed in the
-   order they're found in the file; if one of them cannot be found, tools should
-   not stop, but for example produce a warning and continue with the next line.
-   Each callable receives the configuration as a dictionary (keys are
-   :file:`setup.cfg` sections, values are dictionaries of fields) and can make
-   any changes to it.  *optional*, *multi*
+setup_hook
+   defines a callable that will be called right after the
+   :file:`setup.cfg` file is read. The callable receives the configuration
+   in form of a mapping and can make some changes to it. *optional*
 
    Example::
 
       [global]
-      setup_hooks = package.setup.customize_dist
+      setup_hook = package.setup.customize_dist
 
 
 Metadata
---------
+========
 
 The metadata section contains the metadata for the project as described in
 :PEP:`345`.  Field names are case-insensitive.
@@ -272,9 +265,9 @@ obsoletes-dist
    Same format than *requires-dist*. *optional*, *multi*, *environ*
 
 requires-python
-   Specifies the Python version the distribution requires.  The value is a
-   comma-separated list of version predicates, as described in PEP 345.
-   *optional*, *environ*
+   Specifies the Python version the distribution requires.
+   The value is a version number, as described in PEP 345.
+   *optional*, *multi*, *environ*
 
 requires-externals
    a dependency in the system. This field is free-form,
@@ -289,7 +282,6 @@ One extra field not present in PEP 345 is supported:
 
 description-file
    Path to a text file that will be used to fill the ``description`` field.
-   Multiple values are accepted; they must be separated by whitespace.
    ``description-file`` and ``description`` are mutually exclusive.  *optional*
 
 
@@ -316,7 +308,7 @@ from the fields present in the file.
 
 
 Files
------
+=====
 
 This section describes the files included in the project.
 
@@ -360,7 +352,7 @@ Example::
 
 
 Resources
-^^^^^^^^^
+---------
 
 This section describes the files used by the project which must not be installed
 in the same place that python modules or libraries, they are called
@@ -456,10 +448,10 @@ Where {datafir} category will be platform-dependent.
 
 
 More control on source part
-"""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Glob syntax
-'''''''''''
+"""""""""""
 
 When you declare source file, you can use a glob-like syntax to match multiples file, for example::
 
@@ -477,7 +469,7 @@ Glob tokens are:
 .. TODO Add examples
 
 Order of declaration
-''''''''''''''''''''
+""""""""""""""""""""
 
 The order of declaration is important if one file match multiple rules. The last
 rules matched by file is used, this is useful if you have this source tree::
@@ -500,7 +492,7 @@ one by one, you can declare them in this way::
        doc/README = {help}
 
 Exclude
-'''''''
+"""""""
 
 You can exclude some files of resources declaration by giving no destination, it
 can be useful if you have a non-resources file in the same directory of
@@ -521,12 +513,12 @@ Your **files** section will be::
        doc/RELEASES =
 
 More control on destination part
-""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _setupcfg-resources-base-prefix:
 
 Defining a base prefix
-''''''''''''''''''''''
+""""""""""""""""""""""
 
 When you define your resources, you can have more control of how the final path
 is computed.
@@ -585,7 +577,7 @@ path will be::
 
 
 Overwriting paths for categories
-""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This part is intended for system administrators or downstream OS packagers.
 
@@ -622,18 +614,18 @@ The platform-dependent categories are:
 
 
 Defining extra categories
-"""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. TODO
 
 
 Examples
-""""""""
+^^^^^^^^
 
 These examples are incremental but work unitarily.
 
 Resources in root dir
-'''''''''''''''''''''
+"""""""""""""""""""""
 
 Source tree::
 
@@ -655,7 +647,7 @@ So babar.sh and launch.sh will be placed in {scripts} directory.
 Now let's move all the scripts into a scripts directory.
 
 Resources in sub-directory
-''''''''''''''''''''''''''
+""""""""""""""""""""""""""
 
 Source tree::
 
@@ -681,7 +673,7 @@ scripts into {scripts} instead of {scripts}/scripts.
 Now let's add some docs.
 
 Resources in multiple sub-directories
-'''''''''''''''''''''''''''''''''''''
+"""""""""""""""""""""""""""""""""""""
 
 Source tree::
 
@@ -714,7 +706,7 @@ file is used.
 Now let's add some scripts for windows users.
 
 Complete example
-''''''''''''''''
+""""""""""""""""
 
 Source tree::
 
@@ -744,37 +736,8 @@ We use brace expansion syntax to place all the shell and batch scripts into
 {scripts} category.
 
 
-Extension sections
-------------------
-
-If a project includes extension modules written in C or C++, each one of them
-needs to have its options defined in a dedicated section.  Here's an example::
-
-   [files]
-   packages = coconut
-
-   [extension=_fastcoconut]
-   name = coconut._fastcoconut
-   language = cxx
-   sources = cxx_src/cononut_utils.cxx
-             cxx_src/python_module.cxx
-   include_dirs = /usr/include/gecode
-                  /usr/include/blitz
-   extra_compile_args =
-       -fPIC -O2
-       -DGECODE_VERSION=$(./gecode_version) -- sys.platform != 'win32'
-       /DGECODE_VERSION='win32' -- sys.platform == 'win32'
-
-The section name must start with ``extension=``; the righ-hand part is currently
-discarded.  Valid fields and their values are listed in the documentation of the
-:class:`packaging.compiler.extension.Extension` class; values documented as
-Python lists translate to multi-line values in the configuration file.  In
-addition, multi-line values accept environment markers on each line, after a
-``--``.
-
-
 Command sections
-----------------
+================
 
 To pass options to commands without having to type them on the command line
 for each invocation, you can write them in the :file:`setup.cfg` file, in a

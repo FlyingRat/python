@@ -231,8 +231,7 @@ class Crawler(BaseClient):
         """
         self._mirrors_used.add(self.index_url)
         index_url = self._mirrors.pop()
-        # XXX use urllib.parse for a real check of missing scheme part
-        if not index_url.startswith(("http://", "https://", "file://")):
+        if not ("http://" or "https://" or "file://") in index_url:
             index_url = "http://%s" % index_url
 
         if not index_url.endswith("/simple"):
@@ -283,7 +282,7 @@ class Crawler(BaseClient):
             name = release.name
         else:
             name = release_info['name']
-        if name.lower() not in self._projects:
+        if not name.lower() in self._projects:
             self._projects[name.lower()] = ReleasesList(name, index=self._index)
 
         if release:
@@ -321,7 +320,7 @@ class Crawler(BaseClient):
                             # it's a distribution, so create a dist object
                             try:
                                 infos = get_infos_from_url(link, project_name,
-                                            is_external=self.index_url not in url)
+                                            is_external=not self.index_url in url)
                             except CantParseArchiveName as e:
                                 if self.verbose:
                                     logger.warning(

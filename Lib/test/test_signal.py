@@ -9,7 +9,6 @@ import struct
 import subprocess
 import traceback
 import sys, os, time, errno
-from test.script_helper import assert_python_ok
 try:
     import threading
 except ImportError:
@@ -601,84 +600,12 @@ class PendingSignalsTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, 'sigwait'),
                          'need signal.sigwait()')
-    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
-                         'need signal.pthread_sigmask()')
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
     def test_sigwait(self):
-        def test(signum):
-            signal.alarm(1)
-            received = signal.sigwait([signum])
-            if received != signum:
-                print("sigwait() received %s, not %s"
-                      % (received, signum),
-                      file=sys.stderr)
-                os._exit(1)
+        old_handler = signal.signal(signal.SIGALRM, self.handler)
+        self.addCleanup(signal.signal, signal.SIGALRM, old_handler)
 
-        signum = signal.SIGALRM
-
-        # sigwait must be called with the signal blocked: since the current
-        # process might have several threads running, we fork() a child process
-        # to have a single thread.
-        pid = os.fork()
-        if pid == 0:
-            # child: block and wait the signal
-            try:
-                signal.signal(signum, self.handler)
-                signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
-
-                # Do the tests
-                test(signum)
-
-                # The handler must not be called on unblock
-                try:
-                    signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
-                except ZeroDivisionError:
-                    print("the signal handler has been called",
-                          file=sys.stderr)
-                    os._exit(1)
-            except BaseException as err:
-                print("error: {}".format(err), file=sys.stderr)
-                os._exit(1)
-            else:
-                os._exit(0)
-        else:
-            # parent: check that the child correcty received the signal
-            self.assertEqual(os.waitpid(pid, 0), (pid, 0))
-
-    @unittest.skipUnless(hasattr(signal, 'sigwait'),
-                         'need signal.sigwait()')
-    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
-                         'need signal.pthread_sigmask()')
-    @unittest.skipIf(threading is None, "test needs threading module")
-    def test_sigwait_thread(self):
-        # Check that calling sigwait() from a thread doesn't suspend the whole
-        # process. A new interpreter is spawned to avoid problems when mixing
-        # threads and fork(): only async-safe functions are allowed between
-        # fork() and exec().
-        assert_python_ok("-c", """if True:
-            import os, threading, sys, time, signal
-
-            # the default handler terminates the process
-            signum = signal.SIGUSR1
-
-            def kill_later():
-                # wait until the main thread is waiting in sigwait()
-                time.sleep(1)
-                os.kill(os.getpid(), signum)
-
-            # the signal must be blocked by all the threads
-            signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
-            killer = threading.Thread(target=kill_later)
-            killer.start()
-            received = signal.sigwait([signum])
-            if received != signum:
-                print("sigwait() received %s, not %s" % (received, signum),
-                      file=sys.stderr)
-                sys.exit(1)
-            killer.join()
-            # unblock the signal, which should have been cleared by sigwait()
-            signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
-        """)
+        signal.alarm(1)
+        self.assertEqual(signal.sigwait([signal.SIGALRM]), signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')

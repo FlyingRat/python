@@ -1045,15 +1045,10 @@ class PyBuildExt(build_ext):
             else:
                 sqlite_extra_link_args = ()
 
-            include_dirs = ["Modules/_sqlite"]
-            # Only include the directory where sqlite was found if it does
-            # not already exist in set include directories, otherwise you
-            # can end up with a bad search path order.
-            if sqlite_incdir not in self.compiler.include_dirs:
-                include_dirs.append(sqlite_incdir)
             exts.append(Extension('_sqlite3', sqlite_srcs,
                                   define_macros=sqlite_defines,
-                                  include_dirs=include_dirs,
+                                  include_dirs=["Modules/_sqlite",
+                                                sqlite_incdir],
                                   library_dirs=sqlite_libdir,
                                   runtime_library_dirs=sqlite_libdir,
                                   extra_link_args=sqlite_extra_link_args,
@@ -1779,13 +1774,6 @@ class PyBuildInstall(install):
     def initialize_options (self):
         install.initialize_options(self)
         self.warn_dir=0
-
-    # Customize subcommands to not install an egg-info file for Python
-    sub_commands = [('install_lib', install.has_lib),
-                    ('install_headers', install.has_headers),
-                    ('install_scripts', install.has_scripts),
-                    ('install_data', install.has_data)]
-
 
 class PyBuildInstallLib(install_lib):
     # Do exactly what install_lib does but make sure correct access modes get

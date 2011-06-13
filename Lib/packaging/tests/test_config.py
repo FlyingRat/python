@@ -90,7 +90,7 @@ commands =
 compilers =
     packaging.tests.test_config.DCompiler
 
-setup_hooks = %(setup-hooks)s
+setup_hook = %(setup-hook)s
 
 
 
@@ -114,7 +114,7 @@ libraries = gecodeint gecodekernel -- sys.platform != 'win32'
     GecodeInt GecodeKernel -- sys.platform == 'win32'
 
 [extension=fast_taunt]
-name = two.fast_taunt
+name = three.fast_taunt
 sources = cxx_src/utils_taunt.cxx
           cxx_src/python_module.cxx
 include_dirs = /usr/include/gecode
@@ -135,16 +135,8 @@ class DCompiler:
         pass
 
 
-def version_hook(config):
-    config['metadata']['version'] += '.dev1'
-
-
-def first_hook(config):
-    config['files']['modules'] += '\n first'
-
-
-def third_hook(config):
-    config['files']['modules'] += '\n third'
+def hook(content):
+    content['metadata']['version'] += '.dev1'
 
 
 class FooBarBazTest:
@@ -194,7 +186,7 @@ class ConfigTestCase(support.TempdirManager,
 
     def write_setup(self, kwargs=None):
         opts = {'description-file': 'README', 'extra-files': '',
-                'setup-hooks': 'packaging.tests.test_config.version_hook'}
+                'setup-hook': 'packaging.tests.test_config.hook'}
         if kwargs:
             opts.update(kwargs)
         self.write_file('setup.cfg', SETUP_CFG % opts, encoding='utf-8')
@@ -313,7 +305,7 @@ class ConfigTestCase(support.TempdirManager,
         self.assertEqual(ext.extra_link_args,
             ['`gcc -print-file-name=libgcc.a`', '-shared'])
 
-        ext = ext_modules.get('two.fast_taunt')
+        ext = ext_modules.get('three.fast_taunt')
         self.assertEqual(ext.sources,
             ['cxx_src/utils_taunt.cxx', 'cxx_src/python_module.cxx'])
         self.assertEqual(ext.include_dirs,
@@ -326,30 +318,16 @@ class ConfigTestCase(support.TempdirManager,
         self.assertEqual(ext.extra_compile_args, cargs)
         self.assertEqual(ext.language, 'cxx')
 
-    def test_missing_setup_hook_warns(self):
-        self.write_setup({'setup-hooks': 'this.does._not.exist'})
+    def test_missing_setuphook_warns(self):
+        self.write_setup({'setup-hook': 'this.does._not.exist'})
         self.write_file('README', 'yeah')
         dist = self.get_dist()
         logs = self.get_logs(logging.WARNING)
         self.assertEqual(1, len(logs))
-        self.assertIn('cannot find setup hook', logs[0])
-
-    def test_multiple_setup_hooks(self):
-        self.write_setup({
-            'setup-hooks': '\n  packaging.tests.test_config.first_hook'
-                           '\n  packaging.tests.test_config.missing_hook'
-                           '\n  packaging.tests.test_config.third_hook'
-        })
-        self.write_file('README', 'yeah')
-        dist = self.get_dist()
-
-        self.assertEqual(['haven', 'first', 'third'], dist.py_modules)
-        logs = self.get_logs(logging.WARNING)
-        self.assertEqual(1, len(logs))
-        self.assertIn('cannot find setup hook', logs[0])
+        self.assertIn('could not import setup_hook', logs[0])
 
     def test_metadata_requires_description_files_missing(self):
-        self.write_setup({'description-file': 'README README2'})
+        self.write_setup({'description-file': 'README\n  README2'})
         self.write_file('README', 'yeah')
         self.write_file('README2', 'yeah')
         os.mkdir('src')

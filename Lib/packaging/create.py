@@ -175,11 +175,11 @@ def convert_yn_to_bool(yn, yes=True, no=False):
 def _build_classifiers_dict(classifiers):
     d = {}
     for key in classifiers:
-        subdict = d
+        subDict = d
         for subkey in key.split(' :: '):
-            if subkey not in subdict:
-                subdict[subkey] = {}
-            subdict = subdict[subkey]
+            if not subkey in subDict:
+                subDict[subkey] = {}
+            subDict = subDict[subkey]
     return d
 
 CLASSIFIERS = _build_classifiers_dict(_CLASSIFIERS_LIST)

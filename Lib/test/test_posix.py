@@ -481,8 +481,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, os.pipe2, 'DEADBEEF')
         self.assertRaises(TypeError, os.pipe2, 0, 0)
 
-        # try calling with flags = 0, like os.pipe()
-        r, w = os.pipe2(0)
+        # try calling without flag, like os.pipe()
+        r, w = os.pipe2()
         os.close(r)
         os.close(w)
 
@@ -568,21 +568,6 @@ class PosixTester(unittest.TestCase):
             finally:
                 os.chdir(curdir)
                 support.rmtree(base_path)
-
-    @unittest.skipUnless(hasattr(posix, 'getgrouplist'), "test needs posix.getgrouplist()")
-    @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
-    @unittest.skipUnless(hasattr(os, 'getuid'), "test needs os.getuid()")
-    def test_getgrouplist(self):
-        with os.popen('id -G') as idg:
-            groups = idg.read().strip()
-
-        if not groups:
-            raise unittest.SkipTest("need working 'id -G'")
-
-        self.assertEqual(
-            set([int(x) for x in groups.split()]),
-            set(posix.getgrouplist(pwd.getpwuid(os.getuid())[0],
-                pwd.getpwuid(os.getuid())[3])))
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
