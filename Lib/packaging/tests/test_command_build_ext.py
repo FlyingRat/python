@@ -8,9 +8,12 @@ from packaging.dist import Distribution
 from packaging.errors import UnknownFileError, CompileError
 from packaging.command.build_ext import build_ext
 from packaging.compiler.extension import Extension
-from test.script_helper import assert_python_ok
 
 from packaging.tests import support, unittest, verbose, unload
+
+# http://bugs.python.org/issue4373
+# Don't load the xx module more than once.
+ALREADY_TESTED = False
 
 
 def _get_source_filename():
@@ -26,6 +29,7 @@ class BuildExtTestCase(support.TempdirManager,
         # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
+        sys.path.append(self.tmp_dir)
         filename = _get_source_filename()
         if os.path.exists(filename):
             shutil.copy(filename, self.tmp_dir)
@@ -53,6 +57,7 @@ class BuildExtTestCase(support.TempdirManager,
                 cmd.library_dirs = value.split(os.pathsep)
 
     def test_build_ext(self):
+        global ALREADY_TESTED
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
         if not os.path.exists(xx_c):
             # skipping if we cannot find it
@@ -80,27 +85,28 @@ class BuildExtTestCase(support.TempdirManager,
         finally:
             sys.stdout = old_stdout
 
-        code = """if 1:
-            import sys
-            sys.path.insert(0, %r)
+        if ALREADY_TESTED:
+            return
+        else:
+            ALREADY_TESTED = True
 
-            import xx
+        import xx
 
-            for attr in ('error', 'foo', 'new', 'roj'):
-                assert hasattr(xx, attr)
+        for attr in ('error', 'foo', 'new', 'roj'):
+            self.assertTrue(hasattr(xx, attr))
 
-            assert xx.foo(2, 5) == 7
-            assert xx.foo(13, 15) == 28
-            assert xx.new().demo() is None
-            doc = 'This is a template module just for instruction.'
-            assert xx.__doc__ == doc
-            assert isinstance(xx.Null(), xx.Null)
-            assert isinstance(xx.Str(), xx.Str)"""
-        code = code % self.tmp_dir
-        assert_python_ok('-c', code)
+        self.assertEqual(xx.foo(2, 5), 7)
+        self.assertEqual(xx.foo(13, 15), 28)
+        self.assertEqual(xx.new().demo(), None)
+        doc = 'This is a template module just for instruction.'
+        self.assertEqual(xx.__doc__, doc)
+        self.assertTrue(isinstance(xx.Null(), xx.Null))
+        self.assertTrue(isinstance(xx.Str(), xx.Str))
 
     def tearDown(self):
         # Get everything back to normal
+        unload('xx')
+        sys.path.remove(self.tmp_dir)
         if sys.version > "2.6":
             site.USER_BASE = self.old_user_base
             build_ext.USER_BASE = self.old_user_base
