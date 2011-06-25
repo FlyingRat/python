@@ -70,6 +70,3 @@ PCbuild/Win32-temp-*
 PCbuild/x64-temp-*
 __pycache__
 Modules/_testembed
-.coverage
-coverage/
-htmlcov/
