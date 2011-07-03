@@ -2,55 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2.2?
-===========================
-
-*Release date: XX-XX-2011*
-
-Core and Builtins
------------------
-
-- When a generator yields, do not retain the caller's exception state on the
-  generator.
-
-- Issue #12475: Prevent generators from leaking their exception state into the
-  caller's frame as they return for the last time.
-
-Library
--------
-
-- Issue #12467: warnings: fix a race condition if a warning is emitted at
-  shutdown, if globals()['__file__'] is None.
-
-- Issue #12451: pydoc: importfile() now opens the Python script in binary mode,
-  instead of text mode using the locale encoding, to avoid encoding issues.
-
-- Issue #12451: runpy: run_path() now opens the Python script in binary mode,
-  instead of text mode using the locale encoding, to support other encodings
-  than UTF-8 (scripts using the coding cookie).
-
-- Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
-  of the text mode (using the locale encoding) to avoid encoding issues.
-
-C-API
------
-
-Tests
------
-
-- Issue #12469: Run "wakeup" signal tests in subprocess to run the test in a
-  fresh process with only one thread and to not change signal handling of the
-  parent process.
-
-- Issue #8716: Avoid crashes caused by Aqua Tk on OSX when attempting to run
-  test_tk or test_ttk_guionly under a username that is not currently logged
-  in to the console windowserver (as may be the case under buildbot or ssh).
-
-
 What's New in Python 3.2.1 release candidate 2?
 ===============================================
 
-*Release date: XX-XXX-2011*
+*Release date: 03-Jul-2011*
 
 Core and Builtins
 -----------------
