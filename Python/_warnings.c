@@ -517,7 +517,6 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         const char *module_str = _PyUnicode_AsString(*module);
-        Py_XDECREF(*filename);
         if (module_str == NULL)
                 goto handle_error;
         if (strcmp(module_str, "__main__") == 0) {
