@@ -2,81 +2,6 @@
 Python News
 +++++++++++
 
-What's New in Python 3.2.2?
-===========================
-
-*Release date: XX-XX-2011*
-
-Core and Builtins
------------------
-
-- Issue #9611, #9015: FileIO.read() clamps the length to INT_MAX on Windows.
-
-- When a generator yields, do not retain the caller's exception state on the
-  generator.
-
-- Issue #12475: Prevent generators from leaking their exception state into the
-  caller's frame as they return for the last time.
-
-Library
--------
-
-- Issue #12493: subprocess: Popen.communicate() now also handles EINTR errors
-  if the process has only one pipe.
-
-- Issue #12467: warnings: fix a race condition if a warning is emitted at
-  shutdown, if globals()['__file__'] is None.
-
-- Issue #12451: pydoc: html_getfile() now uses tokenize.open() to support
-  Python scripts using a encoding different than UTF-8 (read the coding cookie
-  of the script).
-
-- Issue #12451: pydoc: importfile() now opens the Python script in binary mode,
-  instead of text mode using the locale encoding, to avoid encoding issues.
-
-- Issue #12451: runpy: run_path() now opens the Python script in binary mode,
-  instead of text mode using the locale encoding, to support other encodings
-  than UTF-8 (scripts using the coding cookie).
-
-- Issue #12451: xml.dom.pulldom: parse() now opens files in binary mode instead
-  of the text mode (using the locale encoding) to avoid encoding issues.
-
-C-API
------
-
-Tests
------
-
-- Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
-  failure in name resolution.
-
-- Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
-  an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
-  Web site.
-
-- Avoid failing in test_urllibnet.test_bad_address when some overzealous
-  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
-  is now skipped instead.
-
-- Issue #12440: When testing whether some bits in SSLContext.options can be
-  reset, check the version of the OpenSSL headers Python was compiled against,
-  rather than the runtime version of the OpenSSL library.
-
-- Issue #12497: Install test/data to prevent failures of the various codecmaps
-  tests.
-
-- Issue #12496: Install test/capath directory to prevent test_connect_capath
-  testcase failure in test_ssl.
-
-- Issue #12469: Run "wakeup" signal tests in subprocess to run the test in a
-  fresh process with only one thread and to not change signal handling of the
-  parent process.
-
-- Issue #8716: Avoid crashes caused by Aqua Tk on OSX when attempting to run
-  test_tk or test_ttk_guionly under a username that is not currently logged
-  in to the console windowserver (as may be the case under buildbot or ssh).
-
-
 What's New in Python 3.2.1?
 ===========================
 
@@ -90,6 +15,13 @@ Library
 
 - Issue #12467: warnings: fix a race condition if a warning is emitted at
   shutdown, if globals()['__file__'] is None.
+
+Tests
+-----
+
+- Avoid failing in test_urllibnet.test_bad_address when some overzealous
+  DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
+  is now skipped instead.
 
 
 What's New in Python 3.2.1 release candidate 2?
@@ -932,7 +864,7 @@ Core and Builtins
   (length bigger than 2^31-1 bytes).
 
 - Issue #9015, #9611: FileIO.readinto(), FileIO.write(), os.write() and
-  stdprinter.write() clamp the length to INT_MAX on Windows.
+  stdprinter.write() clamp the length to 2^31-1 on Windows.
 
 - Issue #8278: On Windows and with a NTFS filesystem, os.stat() and os.utime()
   can now handle dates after 2038.
