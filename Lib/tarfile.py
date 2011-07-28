@@ -30,7 +30,7 @@
 """Read from and write to tar format archives.
 """
 
-__version__ = "$Revision: 85213 $"
+__version__ = "$Revision$"
 # $Source$
 
 version     = "0.9.0"
