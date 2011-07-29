@@ -2,6 +2,8 @@
 
 Implements the Distutils 'build_scripts' command."""
 
+__revision__ = "$Id$"
+
 import os, re
 from stat import ST_MODE
 from distutils import sysconfig
@@ -126,10 +128,9 @@ class build_scripts(Command):
                             "The shebang ({!r}) is not decodable "
                             "from the script encoding ({})"
                             .format(shebang, encoding))
-                    outf = open(outfile, "wb")
-                    outf.write(shebang)
-                    outf.writelines(f.readlines())
-                    outf.close()
+                    with open(outfile, "wb") as outf:
+                        outf.write(shebang)
+                        outf.writelines(f.readlines())
                 if f:
                     f.close()
             else:

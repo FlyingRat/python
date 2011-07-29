@@ -1464,7 +1464,7 @@ components, which must occur in this order:
    object to convert comes after the minimum field width and optional precision.
 
 #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.  If
-   specified as ``'*'`` (an asterisk), the actual precision is read from the next
+   specified as ``'*'`` (an asterisk), the actual width is read from the next
    element of the tuple in *values*, and the value to convert comes after the
    precision.
 
@@ -1546,11 +1546,8 @@ The conversion types are:
 | ``'r'``    | String (converts any Python object using            | \(5)  |
 |            | :func:`repr`).                                      |       |
 +------------+-----------------------------------------------------+-------+
-| ``'s'``    | String (converts any Python object using            | \(5)  |
+| ``'s'``    | String (converts any Python object using            |       |
 |            | :func:`str`).                                       |       |
-+------------+-----------------------------------------------------+-------+
-| ``'a'``    | String (converts any Python object using            | \(5)  |
-|            | :func:`ascii`).                                     |       |
 +------------+-----------------------------------------------------+-------+
 | ``'%'``    | No argument is converted, results in a ``'%'``      |       |
 |            | character in the result.                            |       |
@@ -1584,7 +1581,7 @@ Notes:
    decimal point and defaults to 6.
 
 (5)
-   If precision is ``N``, the output is truncated to ``N`` characters.
+   The precision determines the maximal number of characters used.
 
 
 (7)
@@ -1664,6 +1661,8 @@ Note that while lists allow their items to be of any type, bytearray object
    single: append() (sequence method)
    single: extend() (sequence method)
    single: count() (sequence method)
+   single: clear() (sequence method)
+   single: copy() (sequence method)
    single: index() (sequence method)
    single: insert() (sequence method)
    single: pop() (sequence method)
@@ -1694,6 +1693,12 @@ Note that while lists allow their items to be of any type, bytearray object
 +------------------------------+--------------------------------+---------------------+
 | ``s.extend(x)``              | same as ``s[len(s):len(s)] =   | \(2)                |
 |                              | x``                            |                     |
++------------------------------+--------------------------------+---------------------+
+| ``s.clear()``                | remove all items from ``s``    |                     |
+|                              |                                |                     |
++------------------------------+--------------------------------+---------------------+
+| ``s.copy()``                 | return a shallow copy of ``s`` |                     |
+|                              |                                |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.count(x)``               | return number of *i*'s for     |                     |
 |                              | which ``s[i] == x``            |                     |
@@ -1772,6 +1777,9 @@ Notes:
 
 (8)
    :meth:`sort` is not supported by :class:`bytearray` objects.
+
+    .. versionadded:: 3.3
+       :meth:`clear` and :meth:`!copy` methods.
 
 
 .. _bytes-methods:
