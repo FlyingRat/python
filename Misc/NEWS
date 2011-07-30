@@ -10,9 +10,6 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Make type(None), type(Ellipsis), and type(NotImplemented) callable. They
-  return the respective singleton instances.
-
 - Forbid summing bytes in sum().
 
 - Verify the types of AST strings and identifiers provided by the user before
@@ -248,6 +245,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #11281: smtplib.STMP gets source_address parameter, which adds the
+  ability to bind to specific source address on a machine with multiple
+  interfaces. Patch by Paulo Scardine.
 
 - Issue #12464: tempfile.TemporaryDirectory.cleanup() should not follow
   symlinks: fix it. Patch by Petri Lehtinen.
