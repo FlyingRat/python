@@ -2274,8 +2274,7 @@ def proxy_bypass_environment(host):
     # strip port off host
     hostonly, port = splitport(host)
     # check if the host ends with any of the DNS suffixes
-    no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
-    for name in no_proxy_list:
+    for name in no_proxy.split(','):
         if name and (hostonly.endswith(name) or host.endswith(name)):
             return 1
     # otherwise, don't bypass

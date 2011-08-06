@@ -112,8 +112,7 @@ faulthandler.enable()
 faulthandler._read_null()
 """.strip(),
             3,
-            # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
-            '(?:Segmentation fault|Bus error|Illegal instruction)')
+            '(?:Segmentation fault|Bus error)')
 
     def test_sigsegv(self):
         self.check_fatal_error("""
@@ -193,7 +192,7 @@ faulthandler.enable()
 faulthandler._read_null(True)
 """.strip(),
             3,
-            '(?:Segmentation fault|Bus error|Illegal instruction)')
+            '(?:Segmentation fault|Bus error)')
 
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -204,7 +203,7 @@ faulthandler.enable(output)
 faulthandler._read_null()
 """.strip().format(filename=repr(filename)),
                 4,
-                '(?:Segmentation fault|Bus error|Illegal instruction)',
+                '(?:Segmentation fault|Bus error)',
                 filename=filename)
 
     def test_enable_single_thread(self):
@@ -214,7 +213,7 @@ faulthandler.enable(all_threads=False)
 faulthandler._read_null()
 """.strip(),
             3,
-            '(?:Segmentation fault|Bus error|Illegal instruction)',
+            '(?:Segmentation fault|Bus error)',
             all_threads=False)
 
     def test_disable(self):
