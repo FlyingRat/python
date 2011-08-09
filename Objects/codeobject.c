@@ -402,7 +402,8 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if ((op != Py_EQ && op != Py_NE) ||
         !PyCode_Check(self) ||
         !PyCode_Check(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     co = (PyCodeObject *)self;

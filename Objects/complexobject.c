@@ -650,7 +650,8 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     return res;
 
 Unimplemented:
-    Py_RETURN_NOTIMPLEMENTED;
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
 }
 
 static PyObject *

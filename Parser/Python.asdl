@@ -1,4 +1,4 @@
--- ASDL's five builtin types are identifier, int, string, bytes, object
+-- ASDL's four builtin types are identifier, int, string, object
 
 module Python
 {
@@ -67,7 +67,7 @@ module Python
 			 expr? starargs, expr? kwargs)
 	     | Num(object n) -- a number as a PyObject.
 	     | Str(string s) -- need to specify raw, unicode, etc?
-	     | Bytes(bytes s)
+	     | Bytes(string s)
 	     | Ellipsis
 	     -- other literals? bools?
 

@@ -964,20 +964,23 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
                 return NULL;
         }
 
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     self_size = _getbuffer(self, &self_bytes);
     if (self_size < 0) {
         PyErr_Clear();
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     other_size = _getbuffer(other, &other_bytes);
     if (other_size < 0) {
         PyErr_Clear();
         PyBuffer_Release(&self_bytes);
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {

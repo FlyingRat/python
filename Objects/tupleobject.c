@@ -546,8 +546,10 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
     Py_ssize_t i;
     Py_ssize_t vlen, wlen;
 
-    if (!PyTuple_Check(v) || !PyTuple_Check(w))
-        Py_RETURN_NOTIMPLEMENTED;
+    if (!PyTuple_Check(v) || !PyTuple_Check(w)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;

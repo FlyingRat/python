@@ -832,7 +832,8 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
 
     if (!PyObject_TypeCheck(v, &deque_type) ||
         !PyObject_TypeCheck(w, &deque_type)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     /* Shortcuts */

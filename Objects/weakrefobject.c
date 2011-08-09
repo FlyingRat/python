@@ -193,7 +193,8 @@ weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
     if ((op != Py_EQ && op != Py_NE) ||
         !PyWeakref_Check(self) ||
         !PyWeakref_Check(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
     if (PyWeakref_GET_OBJECT(self) == Py_None
         || PyWeakref_GET_OBJECT(other) == Py_None) {

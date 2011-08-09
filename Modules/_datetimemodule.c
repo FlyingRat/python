@@ -1812,7 +1812,8 @@ delta_richcompare(PyObject *self, PyObject *other, int op)
         return diff_to_bool(diff, op);
     }
     else {
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 }
 
@@ -1910,8 +1911,10 @@ delta_remainder(PyObject *left, PyObject *right)
     PyObject *pyus_remainder;
     PyObject *remainder;
 
-    if (!PyDelta_Check(left) || !PyDelta_Check(right))
-        Py_RETURN_NOTIMPLEMENTED;
+    if (!PyDelta_Check(left) || !PyDelta_Check(right)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 
     pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
     if (pyus_left == NULL)
@@ -1946,8 +1949,10 @@ delta_divmod(PyObject *left, PyObject *right)
     PyObject *delta;
     PyObject *result;
 
-    if (!PyDelta_Check(left) || !PyDelta_Check(right))
-        Py_RETURN_NOTIMPLEMENTED;
+    if (!PyDelta_Check(left) || !PyDelta_Check(right)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 
     pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
     if (pyus_left == NULL)
@@ -2541,9 +2546,10 @@ add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate)
 static PyObject *
 date_add(PyObject *left, PyObject *right)
 {
-    if (PyDateTime_Check(left) || PyDateTime_Check(right))
-        Py_RETURN_NOTIMPLEMENTED;
-
+    if (PyDateTime_Check(left) || PyDateTime_Check(right)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
     if (PyDate_Check(left)) {
         /* date + ??? */
         if (PyDelta_Check(right))
@@ -2562,15 +2568,17 @@ date_add(PyObject *left, PyObject *right)
                                       (PyDateTime_Delta *) left,
                                       0);
     }
-    Py_RETURN_NOTIMPLEMENTED;
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
 }
 
 static PyObject *
 date_subtract(PyObject *left, PyObject *right)
 {
-    if (PyDateTime_Check(left) || PyDateTime_Check(right))
-        Py_RETURN_NOTIMPLEMENTED;
-
+    if (PyDateTime_Check(left) || PyDateTime_Check(right)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
     if (PyDate_Check(left)) {
         if (PyDate_Check(right)) {
             /* date - date */
@@ -2589,7 +2597,8 @@ date_subtract(PyObject *left, PyObject *right)
                                       1);
         }
     }
-    Py_RETURN_NOTIMPLEMENTED;
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
 }
 
 
@@ -2706,8 +2715,10 @@ date_richcompare(PyObject *self, PyObject *other, int op)
                           _PyDateTime_DATE_DATASIZE);
         return diff_to_bool(diff, op);
     }
-    else
-        Py_RETURN_NOTIMPLEMENTED;
+    else {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 }
 
 static PyObject *
@@ -3204,8 +3215,10 @@ static PyObject *
 timezone_richcompare(PyDateTime_TimeZone *self,
                      PyDateTime_TimeZone *other, int op)
 {
-    if (op != Py_EQ && op != Py_NE)
-        Py_RETURN_NOTIMPLEMENTED;
+    if (op != Py_EQ && op != Py_NE) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
     return delta_richcompare(self->offset, other->offset, op);
 }
 
@@ -3651,8 +3664,10 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     PyObject *offset1, *offset2;
     int diff;
 
-    if (! PyTime_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
+    if (! PyTime_Check(other)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 
     if (GET_TIME_TZINFO(self) == GET_TIME_TZINFO(other)) {
         diff = memcmp(((PyDateTime_Time *)self)->data,
@@ -4341,7 +4356,8 @@ datetime_add(PyObject *left, PyObject *right)
                                       (PyDateTime_Delta *) left,
                                       1);
     }
-    Py_RETURN_NOTIMPLEMENTED;
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
 }
 
 static PyObject *
@@ -4543,7 +4559,8 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
                 Py_RETURN_TRUE;
             return cmperror(self, other);
         }
-        Py_RETURN_NOTIMPLEMENTED;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     if (GET_DT_TZINFO(self) == GET_DT_TZINFO(other)) {

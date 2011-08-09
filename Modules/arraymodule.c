@@ -514,8 +514,10 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     Py_ssize_t i, k;
     PyObject *res;
 
-    if (!array_Check(v) || !array_Check(w))
-        Py_RETURN_NOTIMPLEMENTED;
+    if (!array_Check(v) || !array_Check(w)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 
     va = (arrayobject *)v;
     wa = (arrayobject *)w;
