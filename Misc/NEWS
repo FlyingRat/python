@@ -10,6 +10,8 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12575: Validate user-generated AST before it is compiled.
+
 - Make type(None), type(Ellipsis), and type(NotImplemented) callable. They
   return the respective singleton instances.
 
@@ -251,8 +253,6 @@ Library
 
 - Issue #12540: Prevent zombie IDLE processes on Windows due to changes
   in os.kill().
-
-- Add support for unary plus and unary minus to collections.Counter().
 
 - Issue #12683: urlparse updated to include svn as schemes that uses relative
   paths. (svn from 1.5 onwards support relative path).
