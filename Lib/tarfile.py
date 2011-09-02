@@ -2366,11 +2366,17 @@ class TarFile(object):
             try:
                 g = grp.getgrnam(tarinfo.gname)[2]
             except KeyError:
-                g = tarinfo.gid
+                try:
+                    g = grp.getgrgid(tarinfo.gid)[2]
+                except KeyError:
+                    g = os.getgid()
             try:
                 u = pwd.getpwnam(tarinfo.uname)[2]
             except KeyError:
-                u = tarinfo.uid
+                try:
+                    u = pwd.getpwuid(tarinfo.uid)[2]
+                except KeyError:
+                    u = os.getuid()
             try:
                 if tarinfo.issym() and hasattr(os, "lchown"):
                     os.lchown(targetpath, u, g)
