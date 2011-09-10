@@ -1,5 +1,5 @@
 __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
-            'UserString', 'Counter', 'OrderedDict', 'ChainMap']
+            'UserString', 'Counter', 'OrderedDict']
 
 # For backwards compatibility, continue to make the collections ABCs
 # available through the collections module.
