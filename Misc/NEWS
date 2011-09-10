@@ -39,7 +39,11 @@ Core and Builtins
 
 Library
 -------
- 
+
+- Issue #8933: distutils' PKG-INFO files will now correctly report
+  Metadata-Version: 1.1 instead of 1.0 if a Classifier or Download-URL field is
+  present.
+
 - Issue #8286: The distutils command sdist will print a warning message instead
   of crashing when an invalid path is given in the manifest template.
 
@@ -187,9 +191,6 @@ Library
 
 Extension Modules
 -----------------
-
-- Issue #12950: Fix passing file descriptors in multiprocessing, under
-  OpenIndiana/Illumos.
 
 - Issue #12764: Fix a crash in ctypes when the name of a Structure field is not
   a string.
