@@ -35,13 +35,7 @@ import multiprocessing.managers
 import multiprocessing.heap
 import multiprocessing.pool
 
-from multiprocessing import util
-
-try:
-    from multiprocessing import reduction
-    HAS_REDUCTION = True
-except ImportError:
-    HAS_REDUCTION = False
+from multiprocessing import util, reduction
 
 try:
     from multiprocessing.sharedctypes import Value, copy
@@ -1637,7 +1631,6 @@ class _TestConnection(BaseTestCase):
         os.write(fd, data)
         os.close(fd)
 
-    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_fd_transfer(self):
         if self.TYPE != 'processes':
             self.skipTest("only makes sense with processes")
@@ -1655,7 +1648,6 @@ class _TestConnection(BaseTestCase):
         with open(test.support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"foo")
 
-    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     @unittest.skipIf(sys.platform == "win32",
                      "test semantics don't make sense on Windows")
     @unittest.skipIf(MAXFD <= 256,
@@ -1995,11 +1987,9 @@ class _TestImportStar(BaseTestCase):
             'multiprocessing', 'multiprocessing.connection',
             'multiprocessing.heap', 'multiprocessing.managers',
             'multiprocessing.pool', 'multiprocessing.process',
+            'multiprocessing.reduction',
             'multiprocessing.synchronize', 'multiprocessing.util'
             ]
-
-        if HAS_REDUCTION:
-            modules.append('multiprocessing.reduction')
 
         if c_int is not None:
             # This module requires _ctypes
