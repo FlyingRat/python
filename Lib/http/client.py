@@ -697,7 +697,7 @@ class HTTPConnection:
         self.send(connect_bytes)
         for header, value in self._tunnel_headers.items():
             header_str = "%s: %s\r\n" % (header, value)
-            header_bytes = header_str.encode("latin1")
+            header_bytes = header_str.encode("latin-1")
             self.send(header_bytes)
         self.send(b'\r\n')
 
@@ -937,7 +937,7 @@ class HTTPConnection:
         values = list(values)
         for i, one_value in enumerate(values):
             if hasattr(one_value, 'encode'):
-                values[i] = one_value.encode('latin1')
+                values[i] = one_value.encode('latin-1')
             elif isinstance(one_value, int):
                 values[i] = str(one_value).encode('ascii')
         value = b'\r\n\t'.join(values)
@@ -947,11 +947,11 @@ class HTTPConnection:
     def endheaders(self, message_body=None):
         """Indicate that the last header line has been sent to the server.
 
-        This method sends the request to the server.  The optional message_body
-        argument can be used to pass a message body associated with the
-        request.  The message body will be sent in the same packet as the
-        message headers if it is a string, otherwise it is sent as a separate
-        packet.
+        This method sends the request to the server.  The optional
+        message_body argument can be used to pass message body
+        associated with the request.  The message body will be sent in
+        the same packet as the message headers if possible.  The
+        message_body should be a string.
         """
         if self.__state == _CS_REQ_STARTED:
             self.__state = _CS_REQ_SENT

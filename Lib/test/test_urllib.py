@@ -289,7 +289,7 @@ class urlretrieve_FileTests(unittest.TestCase):
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
         try:
-            filePath.encode("utf8")
+            filePath.encode("utf-8")
         except UnicodeEncodeError:
             raise unittest.SkipTest("filePath is not encodable to utf8")
         return "file://%s" % urllib.request.pathname2url(filePath)
@@ -1057,10 +1057,6 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(('user', 'a\fb'),urllib.parse.splitpasswd('user:a\fb'))
         self.assertEqual(('user', 'a\vb'),urllib.parse.splitpasswd('user:a\vb'))
         self.assertEqual(('user', 'a:b'),urllib.parse.splitpasswd('user:a:b'))
-
-    def test_thishost(self):
-        """Test the urllib.request.thishost utility function returns a tuple"""
-        self.assertIsInstance(urllib.request.thishost(), tuple)
 
 
 class URLopener_Tests(unittest.TestCase):

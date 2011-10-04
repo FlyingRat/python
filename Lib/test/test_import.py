@@ -4,7 +4,6 @@ from importlib.test.import_ import test_relative_imports
 from importlib.test.import_ import util as importlib_util
 import marshal
 import os
-import platform
 import py_compile
 import random
 import stat
@@ -15,7 +14,7 @@ import textwrap
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload)
+    unlink, unload, create_empty_file)
 from test import script_helper
 
 
@@ -104,7 +103,7 @@ class ImportTests(unittest.TestCase):
             sys.path.insert(0, os.curdir)
             try:
                 fname = TESTFN + os.extsep + "py"
-                open(fname, 'w').close()
+                create_empty_file(fname)
                 os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
                                  stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
                 __import__(TESTFN)
@@ -296,8 +295,6 @@ class ImportTests(unittest.TestCase):
             self.skipTest('path is not encodable to {}'.format(encoding))
         with self.assertRaises(ImportError) as c:
             __import__(path)
-        self.assertEqual("Import by filename is not supported.",
-                         c.exception.args[0])
 
     def test_import_in_del_does_not_crash(self):
         # Issue 4236
@@ -547,8 +544,6 @@ class PycacheTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
-    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-            "due to varying filesystem permission semantics (issue #11956)")
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
