@@ -2120,10 +2120,6 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                     str_obj = PyUnicode_DecodeUTF8(str, strlen(str), "replace");
                     if (!str_obj)
                         goto fail;
-                    if (PyUnicode_READY(str_obj)) {
-                        Py_DECREF(str_obj);
-                        goto fail;
-                    }
                     argmaxchar = PyUnicode_MAX_CHAR_VALUE(str_obj);
                     maxchar = Py_MAX(maxchar, argmaxchar);
                     n += PyUnicode_GET_LENGTH(str_obj);
@@ -2629,12 +2625,10 @@ PyUnicode_Decode(const char *s,
         goto onError;
     }
     Py_DECREF(buffer);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
-#endif
     return unicode;
 
   onError:
@@ -3680,12 +3674,10 @@ utf7Error:
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
-#endif
     return (PyObject *)unicode;
 
   onError:
@@ -4252,12 +4244,10 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
-#endif
     return (PyObject *)unicode;
 
   onError:
@@ -4757,12 +4747,10 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
-#endif
     return (PyObject *)unicode;
 
   onError:
@@ -5157,12 +5145,10 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&unicode)) {
         Py_DECREF(unicode);
         return NULL;
     }
-#endif
     return (PyObject *)unicode;
 
   onError:
@@ -5618,12 +5604,10 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
     }
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
-#endif
     return (PyObject *)v;
 
   ucnhashError:
@@ -5921,12 +5905,10 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
-#endif
     return (PyObject *)v;
 
   onError:
@@ -6111,12 +6093,10 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
-#endif
     return (PyObject *)v;
 
   onError:
@@ -6539,12 +6519,10 @@ PyUnicode_DecodeASCII(const char *s,
             goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
-#endif
     return (PyObject *)v;
 
   onError:
@@ -6735,12 +6713,10 @@ PyUnicode_DecodeMBCSStateful(const char *s,
         goto retry;
     }
 #endif
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
-#endif
     return (PyObject *)v;
 }
 
@@ -7036,12 +7012,10 @@ PyUnicode_DecodeCharmap(const char *s,
             goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
-#ifndef DONT_MAKE_RESULT_READY
     if (_PyUnicode_READY_REPLACE(&v)) {
         Py_DECREF(v);
         return NULL;
     }
-#endif
     return (PyObject *)v;
 
   onError:
@@ -8083,12 +8057,10 @@ PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
                 p[i] = '0' + decimal;
         }
     }
-#ifndef DONT_MAKE_RESULT_READY
-    if (_PyUnicode_READY_REPLACE(&result)) {
+    if (PyUnicode_READY((PyUnicodeObject*)result) == -1) {
         Py_DECREF(result);
         return NULL;
     }
-#endif
     return result;
 }
 /* --- Decimal Encoder ---------------------------------------------------- */
@@ -10066,17 +10038,17 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         goto error;
     }
 
-    if (PyUnicode_READY(left))
-        goto error;
-    if (PyUnicode_READY(right))
-        goto error;
-
     if (PyUnicode_CheckExact(left) && left != unicode_empty
         && PyUnicode_CheckExact(right) && right != unicode_empty
         && unicode_resizable(left)
         && (_PyUnicode_KIND(right) <= _PyUnicode_KIND(left)
             || _PyUnicode_WSTR(left) != NULL))
     {
+        if (PyUnicode_READY(left))
+            goto error;
+        if (PyUnicode_READY(right))
+            goto error;
+
         /* Don't resize for ascii += latin1. Convert ascii to latin1 requires
            to change the structure size, but characters are stored just after
            the structure, and so it requires to move all charactres which is
@@ -10293,12 +10265,10 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
         }
     }
     assert (j == PyUnicode_GET_LENGTH(u));
-#ifndef DONT_MAKE_RESULT_READY
-    if (_PyUnicode_READY_REPLACE(&u)) {
+    if (PyUnicode_READY(u)) {
         Py_DECREF(u);
         return NULL;
     }
-#endif
     return (PyObject*) u;
 
   overflow:
@@ -12953,7 +12923,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (unicode == NULL)
         return NULL;
     assert(_PyUnicode_CHECK(unicode));
-    if (PyUnicode_READY(unicode))
+    if (_PyUnicode_READY_REPLACE(&unicode))
         return NULL;
 
     self = (PyUnicodeObject *) type->tp_alloc(type, 0);
@@ -13161,7 +13131,7 @@ PyUnicode_InternInPlace(PyObject **p)
     if (PyUnicode_CHECK_INTERNED(s))
         return;
     if (_PyUnicode_READY_REPLACE(p)) {
-        assert(0 && "_PyUnicode_READY_REPLACE fail in PyUnicode_InternInPlace");
+        assert(0 && "PyUnicode_READY fail in PyUnicode_InternInPlace");
         return;
     }
     s = (PyUnicodeObject *)(*p);
@@ -13247,10 +13217,8 @@ _Py_ReleaseInternedUnicodeStrings(void)
             n);
     for (i = 0; i < n; i++) {
         s = (PyUnicodeObject *) PyList_GET_ITEM(keys, i);
-        if (PyUnicode_READY(s) == -1) {
-            assert(0 && "could not ready string");
+        if (PyUnicode_READY(s) == -1)
             fprintf(stderr, "could not ready string\n");
-        }
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
             /* XXX Shouldn't happen */
