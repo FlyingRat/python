@@ -301,6 +301,12 @@ Core and Builtins
 Library
 -------
 
+- Fix distutils.sysconfig.get_makefile_filename when Python was configured with
+  different prefix and exec-prefix.
+
+- Issue #11254: Teach distutils to compile .pyc and .pyo files in
+  PEP 3147-compliant __pycache__ directories.
+
 - Issue #7367: Fix pkgutil.walk_paths to skip directories whose
   contents cannot be read.
 
@@ -1381,9 +1387,6 @@ Extension Modules
 
 Tests
 -----
-
-- Re-enable lib2to3's test_parser.py tests, though with an expected failure
-  (see issue 13125).
 
 - Issue #12656: Add tests for IPv6 and Unix sockets to test_asyncore.
 
