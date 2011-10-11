@@ -69,7 +69,7 @@ making an explicit call into this module at termination. ::
    try:
        with open("/tmp/counter") as infile:
            _count = int(infile.read())
-   except FileNotFoundError:
+   except IOError:
        _count = 0
 
    def incrcounter(n):

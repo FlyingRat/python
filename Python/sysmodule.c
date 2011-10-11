@@ -79,10 +79,8 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
     char *stdout_encoding_str;
     int ret;
-    _Py_IDENTIFIER(encoding);
-    _Py_IDENTIFIER(buffer);
 
-    stdout_encoding = _PyObject_GetAttrId(outf, &PyId_encoding);
+    stdout_encoding = PyObject_GetAttrString(outf, "encoding");
     if (stdout_encoding == NULL)
         goto error;
     stdout_encoding_str = _PyUnicode_AsString(stdout_encoding);
@@ -99,9 +97,9 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
+    buffer = PyObject_GetAttrString(outf, "buffer");
     if (buffer) {
-        _Py_IDENTIFIER(write);
+        _Py_identifier(write);
         result = _PyObject_CallMethodId(buffer, &PyId_write, "(O)", encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
@@ -139,7 +137,6 @@ sys_displayhook(PyObject *self, PyObject *o)
     PyObject *modules = interp->modules;
     PyObject *builtins = PyDict_GetItemString(modules, "builtins");
     int err;
-    _Py_IDENTIFIER(_);
 
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
@@ -153,7 +150,7 @@ sys_displayhook(PyObject *self, PyObject *o)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    if (_PyObject_SetAttrId(builtins, &PyId__, Py_None) != 0)
+    if (PyObject_SetAttrString(builtins, "_", Py_None) != 0)
         return NULL;
     outf = PySys_GetObject("stdout");
     if (outf == NULL || outf == Py_None) {
@@ -175,7 +172,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     }
     if (PyFile_WriteString("\n", outf) != 0)
         return NULL;
-    if (_PyObject_SetAttrId(builtins, &PyId__, o) != 0)
+    if (PyObject_SetAttrString(builtins, "_", o) != 0)
         return NULL;
     Py_INCREF(Py_None);
     return Py_None;
@@ -1844,12 +1841,11 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
     PyObject *writer = NULL, *args = NULL, *result = NULL;
     int err;
-    _Py_IDENTIFIER(write);
 
     if (file == NULL)
         return -1;
 
-    writer = _PyObject_GetAttrId(file, &PyId_write);
+    writer = PyObject_GetAttrString(file, "write");
     if (writer == NULL)
         goto error;
 

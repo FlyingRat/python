@@ -152,7 +152,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     const char* filepath;
     Py_ssize_t len;
     PyObject* result;
-    _Py_IDENTIFIER(open);
+    _Py_identifier(open);
 
     filebytes = PyUnicode_EncodeFSDefault(filename);
     if (filebytes == NULL) {
@@ -232,9 +232,9 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     char buf[MAXPATHLEN+1];
     int kind;
     void *data;
-    _Py_IDENTIFIER(close);
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(TextIOWrapper);
+    _Py_identifier(close);
+    _Py_identifier(open);
+    _Py_identifier(TextIOWrapper);
 
     /* open the file */
     if (filename == NULL)
@@ -463,11 +463,12 @@ dump_decimal(int fd, int value)
 static void
 dump_hexadecimal(int width, unsigned long value, int fd)
 {
+    const char *hexdigits = "0123456789abcdef";
     int len;
     char buffer[sizeof(unsigned long) * 2 + 1];
     len = 0;
     do {
-        buffer[len] = Py_hexdigits[value & 15];
+        buffer[len] = hexdigits[value & 15];
         value >>= 4;
         len++;
     } while (len < width || value);

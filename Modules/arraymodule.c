@@ -1253,7 +1253,7 @@ array_fromfile(arrayobject *self, PyObject *args)
     PyObject *f, *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t n, nbytes;
-    _Py_IDENTIFIER(read);
+    _Py_identifier(read);
     int not_enough_bytes;
 
     if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
@@ -1322,7 +1322,7 @@ array_tofile(arrayobject *self, PyObject *f)
         char* ptr = self->ob_item + i*BLOCKSIZE;
         Py_ssize_t size = BLOCKSIZE;
         PyObject *bytes, *res;
-        _Py_IDENTIFIER(write);
+        _Py_identifier(write);
 
         if (i*BLOCKSIZE + size > nbytes)
             size = nbytes - i*BLOCKSIZE;
@@ -2003,16 +2003,14 @@ array_reduce_ex(arrayobject *array, PyObject *value)
     int mformat_code;
     static PyObject *array_reconstructor = NULL;
     long protocol;
-    _Py_IDENTIFIER(_array_reconstructor);
-    _Py_IDENTIFIER(__dict__);
 
     if (array_reconstructor == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");
         if (array_module == NULL)
             return NULL;
-        array_reconstructor = _PyObject_GetAttrId(
+        array_reconstructor = PyObject_GetAttrString(
             array_module,
-            &PyId__array_reconstructor);
+            "_array_reconstructor");
         Py_DECREF(array_module);
         if (array_reconstructor == NULL)
             return NULL;
@@ -2027,7 +2025,7 @@ array_reduce_ex(arrayobject *array, PyObject *value)
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    dict = _PyObject_GetAttrId((PyObject *)array, &PyId___dict__);
+    dict = PyObject_GetAttrString((PyObject *)array, "__dict__");
     if (dict == NULL) {
         if (!PyErr_ExceptionMatches(PyExc_AttributeError))
             return NULL;

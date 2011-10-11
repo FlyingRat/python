@@ -826,9 +826,8 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *proto_obj,
 static int
 _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 {
-    _Py_IDENTIFIER(write);
     assert(file != NULL);
-    self->write = _PyObject_GetAttrId(file, &PyId_write);
+    self->write = PyObject_GetAttrString(file, "write");
     if (self->write == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_SetString(PyExc_TypeError,
@@ -1174,19 +1173,15 @@ _Unpickler_New(void)
 static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
-    _Py_IDENTIFIER(peek);
-    _Py_IDENTIFIER(read);
-    _Py_IDENTIFIER(readline);
-
-    self->peek = _PyObject_GetAttrId(file, &PyId_peek);
+    self->peek = PyObject_GetAttrString(file, "peek");
     if (self->peek == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
         else
             return -1;
     }
-    self->read = _PyObject_GetAttrId(file, &PyId_read);
-    self->readline = _PyObject_GetAttrId(file, &PyId_readline);
+    self->read = PyObject_GetAttrString(file, "read");
+    self->readline = PyObject_GetAttrString(file, "readline");
     if (self->readline == NULL || self->read == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_SetString(PyExc_TypeError,
@@ -1776,6 +1771,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
 static PyObject *
 raw_unicode_escape(PyObject *obj)
 {
+    static const char *hexdigits = "0123456789abcdef";
     PyObject *repr, *result;
     char *p;
     Py_ssize_t i, size, expandsize;
@@ -1808,23 +1804,23 @@ raw_unicode_escape(PyObject *obj)
         if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = Py_hexdigits[(ch >> 28) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 24) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 20) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 16) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
-            *p++ = Py_hexdigits[ch & 15];
+            *p++ = hexdigits[(ch >> 28) & 0xf];
+            *p++ = hexdigits[(ch >> 24) & 0xf];
+            *p++ = hexdigits[(ch >> 20) & 0xf];
+            *p++ = hexdigits[(ch >> 16) & 0xf];
+            *p++ = hexdigits[(ch >> 12) & 0xf];
+            *p++ = hexdigits[(ch >> 8) & 0xf];
+            *p++ = hexdigits[(ch >> 4) & 0xf];
+            *p++ = hexdigits[ch & 15];
         }
         /* Map 16-bit characters to '\uxxxx' */
         else if (ch >= 256 || ch == '\\' || ch == '\n') {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
-            *p++ = Py_hexdigits[ch & 15];
+            *p++ = hexdigits[(ch >> 12) & 0xf];
+            *p++ = hexdigits[(ch >> 8) & 0xf];
+            *p++ = hexdigits[(ch >> 4) & 0xf];
+            *p++ = hexdigits[ch & 15];
         }
         /* Copy everything else as-is */
         else
@@ -2492,7 +2488,7 @@ save_dict(PicklerObject *self, PyObject *obj)
             status = batch_dict_exact(self, obj);
             Py_LeaveRecursiveCall();
         } else {
-            _Py_IDENTIFIER(items);
+            _Py_identifier(items);
 
             items = _PyObject_CallMethodId(obj, &PyId_items, "()");
             if (items == NULL)
@@ -3394,7 +3390,6 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     PyObject *file;
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
-    _Py_IDENTIFIER(persistent_id);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:Pickler",
                                      kwlist, &file, &proto_obj, &fix_imports))
@@ -3430,9 +3425,9 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     self->fast_nesting = 0;
     self->fast_memo = NULL;
     self->pers_func = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_id);
+    if (PyObject_HasAttrString((PyObject *)self, "persistent_id")) {
+        self->pers_func = PyObject_GetAttrString((PyObject *)self,
+                                                 "persistent_id");
         if (self->pers_func == NULL)
             return -1;
     }
@@ -3781,7 +3776,7 @@ static PyTypeObject Pickler_Type = {
 static PyObject *
 find_class(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
 {
-    _Py_IDENTIFIER(find_class);
+    _Py_identifier(find_class);
 
     return _PyObject_CallMethodId((PyObject *)self, &PyId_find_class, "OO",
                                   module_name, global_name);
@@ -4388,17 +4383,16 @@ static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
     PyObject *result = NULL;
-    _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
     if (Py_SIZE(args) > 0 || !PyType_Check(cls) ||
-        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
+        PyObject_HasAttrString(cls, "__getinitargs__")) {
         result = PyObject_CallObject(cls, args);
     }
     else {
-        _Py_IDENTIFIER(__new__);
+        _Py_identifier(__new__);
 
         result = _PyObject_CallMethodId(cls, &PyId___new__, "O", cls);
     }
@@ -4941,9 +4935,8 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
     }
     else {
         PyObject *append_func;
-        _Py_IDENTIFIER(append);
 
-        append_func = _PyObject_GetAttrId(list, &PyId_append);
+        append_func = PyObject_GetAttrString(list, "append");
         if (append_func == NULL)
             return -1;
         for (i = x; i < len; i++) {
@@ -5030,7 +5023,6 @@ load_build(UnpicklerObject *self)
     PyObject *state, *inst, *slotstate;
     PyObject *setstate;
     int status = 0;
-    _Py_IDENTIFIER(__setstate__);
 
     /* Stack is ... instance, state.  We want to leave instance at
      * the stack top, possibly mutated via instance.__setstate__(state).
@@ -5044,7 +5036,7 @@ load_build(UnpicklerObject *self)
 
     inst = self->stack->data[Py_SIZE(self->stack) - 1];
 
-    setstate = _PyObject_GetAttrId(inst, &PyId___setstate__);
+    setstate = PyObject_GetAttrString(inst, "__setstate__");
     if (setstate == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -5087,13 +5079,12 @@ load_build(UnpicklerObject *self)
         PyObject *dict;
         PyObject *d_key, *d_value;
         Py_ssize_t i;
-        _Py_IDENTIFIER(__dict__);
 
         if (!PyDict_Check(state)) {
             PyErr_SetString(UnpicklingError, "state is not a dictionary");
             goto error;
         }
-        dict = _PyObject_GetAttrId(inst, &PyId___dict__);
+        dict = PyObject_GetAttrString(inst, "__dict__");
         if (dict == NULL)
             goto error;
 
@@ -5558,7 +5549,6 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
     PyObject *fix_imports = Py_True;
     char *encoding = NULL;
     char *errors = NULL;
-    _Py_IDENTIFIER(persistent_load);
 
     /* XXX: That is an horrible error message. But, I don't know how to do
        better... */
@@ -5593,9 +5583,9 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
     if (self->fix_imports == -1)
         return -1;
 
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_load);
+    if (PyObject_HasAttrString((PyObject *)self, "persistent_load")) {
+        self->pers_func = PyObject_GetAttrString((PyObject *)self,
+                                                 "persistent_load");
         if (self->pers_func == NULL)
             return -1;
     }

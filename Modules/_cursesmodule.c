@@ -1418,7 +1418,7 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_IDENTIFIER(write);
+        _Py_identifier(write);
 
         if (n <= 0)
             break;
@@ -1913,7 +1913,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     WINDOW *win;
 
     PyCursesInitialised;
-    _Py_IDENTIFIER(read);
+    _Py_identifier(read);
 
     strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
     fd = mkstemp(fn);
@@ -2454,8 +2454,6 @@ update_lines_cols(void)
 {
     PyObject *o;
     PyObject *m = PyImport_ImportModuleNoBlock("curses");
-    _Py_IDENTIFIER(LINES);
-    _Py_IDENTIFIER(COLS);
 
     if (!m)
         return 0;
@@ -2465,13 +2463,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
+    if (PyObject_SetAttrString(m, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, PyId_LINES.object, o)) {
+    if (PyDict_SetItemString(ModDict, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -2482,12 +2479,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
+    if (PyObject_SetAttrString(m, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItem(ModDict, PyId_COLS.object, o)) {
+    if (PyDict_SetItemString(ModDict, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -2722,7 +2719,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
             PyErr_Format(PyExc_TypeError,
                          "expect bytes or str of length 1, or int, "
                          "got a str of length %zi",
-                         PyUnicode_GET_LENGTH(obj));
+                         PyUnicode_GET_SIZE(obj));
             return 0;
         }
         *wch = buffer[0];

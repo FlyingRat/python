@@ -154,7 +154,7 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 
 static PyObject *initstr = NULL;
-_Py_IDENTIFIER(__path__);
+
 
 /* Initialize things */
 
@@ -248,9 +248,8 @@ _PyImportHooks_Init(void)
             PySys_WriteStderr("# can't import zipimport\n");
     }
     else {
-        _Py_IDENTIFIER(zipimporter);
-        PyObject *zipimporter = _PyObject_GetAttrId(zimpimport,
-                                                    &PyId_zipimporter);
+        PyObject *zipimporter = PyObject_GetAttrString(zimpimport,
+                                                       "zipimporter");
         Py_DECREF(zimpimport);
         if (zipimporter == NULL) {
             PyErr_Clear(); /* No zipimporter object -- okay */
@@ -1802,7 +1801,7 @@ find_module_path(PyObject *fullname, PyObject *name, PyObject *path,
 
     /* sys.path_hooks import hook */
     if (p_loader != NULL) {
-        _Py_IDENTIFIER(find_module);
+        _Py_identifier(find_module);
         PyObject *importer;
 
         importer = get_path_importer(path_importer_cache,
@@ -2032,7 +2031,7 @@ find_module(PyObject *fullname, PyObject *name, PyObject *search_path_list,
 
     /* sys.meta_path import hook */
     if (p_loader != NULL) {
-        _Py_IDENTIFIER(find_module);
+        _Py_identifier(find_module);
         PyObject *meta_path;
 
         meta_path = PySys_GetObject("meta_path");
@@ -2282,8 +2281,6 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
     WIN32_FIND_DATAW data;
     HANDLE h;
     int cmp;
-    wchar_t *wname;
-    Py_ssize_t wname_len;
 
     if (Py_GETENV("PYTHONCASEOK") != NULL)
         return 1;
@@ -2296,12 +2293,9 @@ case_ok(PyObject *filename, Py_ssize_t prefix_delta, PyObject *name)
         return 0;
     }
     FindClose(h);
-
-    wname = PyUnicode_AsUnicodeAndSize(name, &wname_len);
-    if (wname == NULL)
-        return -1;
-
-    cmp = wcsncmp(data.cFileName, wname, wname_len);
+    cmp = wcsncmp(data.cFileName,
+                  PyUnicode_AS_UNICODE(name),
+                  PyUnicode_GET_SIZE(name));
     return cmp == 0;
 #elif defined(USE_CASE_OK_BYTES)
     int match;
@@ -2462,7 +2456,7 @@ load_module(PyObject *name, FILE *fp, PyObject *pathname, int type, PyObject *lo
         break;
 
     case IMP_HOOK: {
-        _Py_IDENTIFIER(load_module);
+        _Py_identifier(load_module);
         if (loader == NULL) {
             PyErr_SetString(PyExc_ImportError,
                             "import hook without loader");
@@ -3209,7 +3203,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
     PyObject *fullname;
     Py_ssize_t fromlist_len;
 
-    if (!_PyObject_HasAttrId(mod, &PyId___path__))
+    if (!PyObject_HasAttrString(mod, "__path__"))
         return 1;
 
     fromlist_len = PySequence_Size(fromlist);
@@ -3227,12 +3221,11 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, PyObject *name,
         }
         if (PyUnicode_READ_CHAR(item, 0) == '*') {
             PyObject *all;
-            _Py_IDENTIFIER(__all__);
             Py_DECREF(item);
             /* See if the package defines __all__ */
             if (recursive)
                 continue; /* Avoid endless recursion */
-            all = _PyObject_GetAttrId(mod, &PyId___all__);
+            all = PyObject_GetAttrString(mod, "__all__");
             if (all == NULL)
                 PyErr_Clear();
             else {
@@ -3320,7 +3313,7 @@ import_submodule(PyObject *mod, PyObject *subname, PyObject *fullname)
     if (mod == Py_None)
         path_list = NULL;
     else {
-        path_list = _PyObject_GetAttrId(mod, &PyId___path__);
+        path_list = PyObject_GetAttrString(mod, "__path__");
         if (path_list == NULL) {
             PyErr_Clear();
             Py_INCREF(Py_None);
@@ -3431,7 +3424,7 @@ PyImport_ReloadModule(PyObject *m)
             goto error;
         }
         Py_DECREF(parentname);
-        path_list = _PyObject_GetAttrId(parent, &PyId___path__);
+        path_list = PyObject_GetAttrString(parent, "__path__");
         if (path_list == NULL)
             PyErr_Clear();
         subname++;

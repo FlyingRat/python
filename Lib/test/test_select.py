@@ -1,9 +1,8 @@
-import errno
-import os
-import select
-import sys
-import unittest
 from test import support
+import unittest
+import select
+import os
+import sys
 
 @unittest.skipIf(sys.platform[:3] in ('win', 'os2', 'riscos'),
                  "can't easily test on this system")
@@ -22,17 +21,6 @@ class SelectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, select.select, [self.Almost()], [], [])
         self.assertRaises(TypeError, select.select, [], [], [], "not a number")
         self.assertRaises(ValueError, select.select, [], [], [], -1)
-
-    def test_errno(self):
-        with open(__file__, 'rb') as fp:
-            fd = fp.fileno()
-            fp.close()
-            try:
-                select.select([fd], [], [])
-            except select.error as err:
-                self.assertEqual(err.errno, errno.EBADF)
-            else:
-                self.fail("exception not raised")
 
     def test_returned_list_identity(self):
         # See issue #8329

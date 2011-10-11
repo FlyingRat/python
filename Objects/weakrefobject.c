@@ -157,12 +157,11 @@ static PyObject *
 weakref_repr(PyWeakReference *self)
 {
     PyObject *name, *repr;
-    _Py_IDENTIFIER(__name__);
 
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
 
-    name = _PyObject_GetAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__);
+    name = PyObject_GetAttrString(PyWeakref_GET_OBJECT(self), "__name__");
     if (name == NULL || !PyUnicode_Check(name)) {
         if (name == NULL)
             PyErr_Clear();
@@ -441,7 +440,7 @@ proxy_checkref(PyWeakReference *proxy)
 #define WRAP_METHOD(method, special) \
     static PyObject * \
     method(PyObject *proxy) { \
-            _Py_IDENTIFIER(special); \
+            _Py_identifier(special); \
             UNWRAP(proxy); \
                 return _PyObject_CallMethodId(proxy, &PyId_##special, ""); \
         }

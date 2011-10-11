@@ -1933,7 +1933,6 @@ static PyObject *
 set_reduce(PySetObject *so)
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_IDENTIFIER(__dict__);
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1941,7 +1940,7 @@ set_reduce(PySetObject *so)
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    dict = _PyObject_GetAttrId((PyObject *)so, &PyId___dict__);
+    dict = PyObject_GetAttrString((PyObject *)so, "__dict__");
     if (dict == NULL) {
         PyErr_Clear();
         dict = Py_None;

@@ -1426,8 +1426,11 @@ Files and Directories
 
          try:
              fp = open("myfile")
-         except PermissionError:
-             return "some default data"
+         except IOError as e:
+             if e.errno == errno.EACCESS:
+                 return "some default data"
+             # Not a permission error.
+             raise
          else:
              with fp:
                  return fp.read()
@@ -1658,9 +1661,9 @@ Files and Directories
    .. versionadded:: 3.3
 
 
-.. function:: lremovexattr(path, attr)
+.. function:: lremoveattr(path, attr)
 
-   This works exactly like :func:`removexattr` but doesn't follow symlinks.
+   This works exactly like :func:`removeattr` but doesn't follow symlinks.
 
    Availability: Linux
 

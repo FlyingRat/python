@@ -249,7 +249,9 @@ validate_and_copy_tuple(PyObject *tup)
             return NULL;
         }
         else {
-            item = PyUnicode_Copy(item);
+            item = PyUnicode_FromUnicode(
+                PyUnicode_AS_UNICODE(item),
+                PyUnicode_GET_SIZE(item));
             if (item == NULL) {
                 Py_DECREF(newtuple);
                 return NULL;

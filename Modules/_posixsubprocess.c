@@ -18,7 +18,7 @@ static long max_fd;
 static int _enable_gc(PyObject *gc_module)
 {
     PyObject *result;
-    _Py_IDENTIFIER(enable);
+    _Py_identifier(enable);
 
     result = _PyObject_CallMethodId(gc_module, &PyId_enable, NULL);
     if (result == NULL)
@@ -251,8 +251,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     /* We need to call gc.disable() when we'll be calling preexec_fn */
     if (preexec_fn != Py_None) {
         PyObject *result;
-        _Py_IDENTIFIER(isenabled);
-        _Py_IDENTIFIER(disable);
+        _Py_identifier(isenabled);
+        _Py_identifier(disable);
         
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)

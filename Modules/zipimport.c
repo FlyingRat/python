@@ -868,7 +868,7 @@ read_directory(PyObject *archive)
                     PY_MAJOR_VERSION, PY_MINOR_VERSION);
             goto error;
         }
-        for (i = 0; (i < (MAXPATHLEN - (Py_ssize_t)length - 1)) &&
+        for (i = 0; (i < MAXPATHLEN - length - 1) &&
                  (i < PyUnicode_GET_LENGTH(nameobj)); i++)
             path[length + 1 + i] = PyUnicode_READ_CHAR(nameobj, i);
         path[length + 1 + i] = 0;
@@ -908,7 +908,6 @@ get_decompress_func(void)
     static int importing_zlib = 0;
     PyObject *zlib;
     PyObject *decompress;
-    _Py_IDENTIFIER(decompress);
 
     if (importing_zlib != 0)
         /* Someone has a zlib.py[co] in their Zip file;
@@ -918,8 +917,8 @@ get_decompress_func(void)
     zlib = PyImport_ImportModuleNoBlock("zlib");
     importing_zlib = 0;
     if (zlib != NULL) {
-        decompress = _PyObject_GetAttrId(zlib,
-                                         &PyId_decompress);
+        decompress = PyObject_GetAttrString(zlib,
+                                            "decompress");
         Py_DECREF(zlib);
     }
     else {

@@ -104,9 +104,8 @@ resolution and/or the host configuration.  For deterministic behavior use a
 numeric address in *host* portion.
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
-and out-of-memory conditions can be raised; starting from Python 3.3, errors
-related to socket or address semantics raise :exc:`OSError` or one of its
-subclasses (they used to raise :exc:`socket.error`).
+and out-of-memory conditions can be raised; errors related to socket or address
+semantics raise :exc:`socket.error` or one of its subclasses.
 
 Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
 generalization of this based on timeouts is supported through
@@ -121,15 +120,20 @@ The module :mod:`socket` exports the following constants and functions:
 
 .. exception:: error
 
-   A deprecated alias of :exc:`OSError`.
+   .. index:: module: errno
 
-   .. versionchanged:: 3.3
-      Following :pep:`3151`, this class was made an alias of :exc:`OSError`.
+   A subclass of :exc:`IOError`, this exception is raised for socket-related
+   errors.  It is recommended that you inspect its ``errno`` attribute to
+   discriminate between different kinds of errors.
+
+   .. seealso::
+      The :mod:`errno` module contains symbolic names for the error codes
+      defined by the underlying operating system.
 
 
 .. exception:: herror
 
-   A subclass of :exc:`OSError`, this exception is raised for
+   A subclass of :exc:`socket.error`, this exception is raised for
    address-related errors, i.e. for functions that use *h_errno* in the POSIX
    C API, including :func:`gethostbyname_ex` and :func:`gethostbyaddr`.
    The accompanying value is a pair ``(h_errno, string)`` representing an
@@ -137,12 +141,10 @@ The module :mod:`socket` exports the following constants and functions:
    *string* represents the description of *h_errno*, as returned by the
    :c:func:`hstrerror` C function.
 
-   .. versionchanged:: 3.3
-      This class was made a subclass of :exc:`OSError`.
 
 .. exception:: gaierror
 
-   A subclass of :exc:`OSError`, this exception is raised for
+   A subclass of :exc:`socket.error`, this exception is raised for
    address-related errors by :func:`getaddrinfo` and :func:`getnameinfo`.
    The accompanying value is a pair ``(error, string)`` representing an error
    returned by a library call.  *string* represents the description of
@@ -150,19 +152,15 @@ The module :mod:`socket` exports the following constants and functions:
    numeric *error* value will match one of the :const:`EAI_\*` constants
    defined in this module.
 
-   .. versionchanged:: 3.3
-      This class was made a subclass of :exc:`OSError`.
 
 .. exception:: timeout
 
-   A subclass of :exc:`OSError`, this exception is raised when a timeout
+   A subclass of :exc:`socket.error`, this exception is raised when a timeout
    occurs on a socket which has had timeouts enabled via a prior call to
    :meth:`~socket.settimeout` (or implicitly through
    :func:`~socket.setdefaulttimeout`).  The accompanying value is a string
    whose value is currently always "timed out".
 
-   .. versionchanged:: 3.3
-      This class was made a subclass of :exc:`OSError`.
 
 .. data:: AF_UNIX
           AF_INET
@@ -482,7 +480,7 @@ The module :mod:`socket` exports the following constants and functions:
    Unix manual page :manpage:`inet(3)` for details.
 
    If the IPv4 address string passed to this function is invalid,
-   :exc:`OSError` will be raised. Note that exactly what is valid depends on
+   :exc:`socket.error` will be raised. Note that exactly what is valid depends on
    the underlying C implementation of :c:func:`inet_aton`.
 
    :func:`inet_aton` does not support IPv6, and :func:`inet_pton` should be used
@@ -499,7 +497,7 @@ The module :mod:`socket` exports the following constants and functions:
    argument.
 
    If the byte sequence passed to this function is not exactly 4 bytes in
-   length, :exc:`OSError` will be raised. :func:`inet_ntoa` does not
+   length, :exc:`socket.error` will be raised. :func:`inet_ntoa` does not
    support IPv6, and :func:`inet_ntop` should be used instead for IPv4/v6 dual
    stack support.
 
@@ -513,7 +511,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the IP address string *ip_string* is invalid,
-   :exc:`OSError` will be raised. Note that exactly what is valid depends on
+   :exc:`socket.error` will be raised. Note that exactly what is valid depends on
    both the value of *address_family* and the underlying implementation of
    :c:func:`inet_pton`.
 
@@ -531,7 +529,7 @@ The module :mod:`socket` exports the following constants and functions:
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the string *packed_ip* is not the correct length for the
    specified address family, :exc:`ValueError` will be raised.  A
-   :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
+   :exc:`socket.error` is raised for errors from the call to :func:`inet_ntop`.
 
    Availability: Unix (maybe not all platforms).
 
@@ -597,7 +595,7 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: sethostname(name)
 
    Set the machine's hostname to *name*.  This will raise a
-   :exc:`OSError` if you don't have enough rights.
+   :exc:`socket.error` if you don't have enough rights.
 
    Availability: Unix.
 
@@ -608,7 +606,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a list of network interface information
    (index int, name string) tuples.
-   :exc:`OSError` if the system call fails.
+   :exc:`socket.error` if the system call fails.
 
    Availability: Unix.
 
@@ -619,7 +617,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a network interface index number corresponding to an
    interface name.
-   :exc:`OSError` if no interface with the given name exists.
+   :exc:`socket.error` if no interface with the given name exists.
 
    Availability: Unix.
 
@@ -630,7 +628,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Return a network interface name corresponding to a
    interface index number.
-   :exc:`OSError` if no interface with the given index exists.
+   :exc:`socket.error` if no interface with the given index exists.
 
    Availability: Unix.
 
@@ -1183,13 +1181,13 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except OSError as msg:
+       except socket.error as msg:
            s = None
            continue
        try:
            s.bind(sa)
            s.listen(1)
-       except OSError as msg:
+       except socket.error as msg:
            s.close()
            s = None
            continue
@@ -1218,12 +1216,12 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except OSError as msg:
+       except socket.error as msg:
            s = None
            continue
        try:
            s.connect(sa)
-       except OSError as msg:
+       except socket.error as msg:
            s.close()
            s = None
            continue
@@ -1295,18 +1293,18 @@ network. This example might require special priviledge::
 
        try:
            s.send(cf)
-       except OSError:
+       except socket.error:
            print('Error sending CAN frame')
 
        try:
            s.send(build_can_frame(0x01, b'\x01\x02\x03'))
-       except OSError:
+       except socket.error:
            print('Error sending CAN frame')
 
 Running an example several times with too small delay between executions, could
 lead to this error::
 
-   OSError: [Errno 98] Address already in use
+   socket.error: [Errno 98] Address already in use
 
 This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.

@@ -1387,8 +1387,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds, char *methnam
         result = -1;
 
     else if (arg != NULL) {
-        _Py_IDENTIFIER(keys);
-        if (_PyObject_HasAttrId(arg, &PyId_keys))
+        if (PyObject_HasAttrString(arg, "keys"))
             result = PyDict_Merge(self, arg, 1);
         else
             result = PyDict_MergeFromSeq2(self, arg, 1);
@@ -2708,7 +2707,7 @@ dictviews_sub(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(difference_update);
+    _Py_identifier(difference_update);
 
     if (result == NULL)
         return NULL;
@@ -2728,7 +2727,7 @@ dictviews_and(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(intersection_update);
+    _Py_identifier(intersection_update);
 
     if (result == NULL)
         return NULL;
@@ -2748,12 +2747,10 @@ dictviews_or(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(update);
-
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodId(result, &PyId_update, "O", other);
+    tmp = PyObject_CallMethod(result, "update", "O", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -2768,7 +2765,7 @@ dictviews_xor(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(symmetric_difference_update);
+    _Py_identifier(symmetric_difference_update);
 
     if (result == NULL)
         return NULL;

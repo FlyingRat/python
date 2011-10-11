@@ -548,13 +548,14 @@ enum PyUnicode_Kind {
    than iterating over the string. */
 #define PyUnicode_MAX_CHAR_VALUE(op) \
     (assert(PyUnicode_IS_READY(op)),                                    \
-     (PyUnicode_IS_ASCII(op) ?                                          \
-      (0x7f) :                                                          \
+     (PyUnicode_IS_COMPACT_ASCII(op) ? 0x7f:                            \
       (PyUnicode_KIND(op) == PyUnicode_1BYTE_KIND ?                     \
-       (0xffU) :                                                        \
+       (PyUnicode_DATA(op) == (((PyCompactUnicodeObject *)(op))->utf8) ? \
+        (0x7fU) : (0xffU)                                                 \
+           ) :                                                          \
        (PyUnicode_KIND(op) == PyUnicode_2BYTE_KIND ?                    \
-        (0xffffU) :                                                     \
-        (0x10ffffU)))))
+        (0xffffU) : (0x10ffffU)                                           \
+           ))))
 
 #endif
 
@@ -2031,7 +2032,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 
    do
 
-       _Py_IDENTIFIER(foo);
+       _Py_identifier(foo);
        ...
        r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
 
@@ -2050,7 +2051,7 @@ typedef struct _Py_Identifier {
 } _Py_Identifier;
 
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = { 0, value, 0 }
-#define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
+#define _Py_identifier(varname) _Py_static_string(PyId_##varname, #varname)
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);

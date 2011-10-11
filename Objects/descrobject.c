@@ -703,7 +703,7 @@ static PyObject *
 proxy_get(proxyobject *pp, PyObject *args)
 {
     PyObject *key, *def = Py_None;
-    _Py_IDENTIFIER(get);
+    _Py_identifier(get);
 
     if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
         return NULL;
@@ -713,28 +713,28 @@ proxy_get(proxyobject *pp, PyObject *args)
 static PyObject *
 proxy_keys(proxyobject *pp)
 {
-    _Py_IDENTIFIER(keys);
+    _Py_identifier(keys);
     return _PyObject_CallMethodId(pp->dict, &PyId_keys, NULL);
 }
 
 static PyObject *
 proxy_values(proxyobject *pp)
 {
-    _Py_IDENTIFIER(values);
+    _Py_identifier(values);
     return _PyObject_CallMethodId(pp->dict, &PyId_values, NULL);
 }
 
 static PyObject *
 proxy_items(proxyobject *pp)
 {
-    _Py_IDENTIFIER(items);
+    _Py_identifier(items);
     return _PyObject_CallMethodId(pp->dict, &PyId_items, NULL);
 }
 
 static PyObject *
 proxy_copy(proxyobject *pp)
 {
-    _Py_IDENTIFIER(copy);
+    _Py_identifier(copy);
     return _PyObject_CallMethodId(pp->dict, &PyId_copy, NULL);
 }
 
@@ -1299,8 +1299,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && get != NULL) {
-        _Py_IDENTIFIER(__doc__);
-        PyObject *get_doc = _PyObject_GetAttrId(get, &PyId___doc__);
+        PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
         if (get_doc) {
             if (Py_TYPE(self) == &PyProperty_Type) {
                 Py_XDECREF(prop->prop_doc);
@@ -1311,7 +1310,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
                 in dict of the subclass instance instead,
                 otherwise it gets shadowed by __doc__ in the
                 class's dict. */
-                int err = _PyObject_SetAttrId(self, &PyId___doc__, get_doc);
+                int err = PyObject_SetAttrString(self, "__doc__", get_doc);
                 Py_DECREF(get_doc);
                 if (err < 0)
                     return -1;

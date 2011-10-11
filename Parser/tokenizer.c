@@ -462,8 +462,7 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline = NULL, *stream = NULL, *io = NULL;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(readline);
+    _Py_identifier(open);
     int fd;
 
     io = PyImport_ImportModuleNoBlock("io");
@@ -482,7 +481,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         goto cleanup;
 
     Py_XDECREF(tok->decoding_readline);
-    readline = _PyObject_GetAttrId(stream, &PyId_readline);
+    readline = PyObject_GetAttrString(stream, "readline");
     tok->decoding_readline = readline;
 
     /* The file has been reopened; parsing will restart from

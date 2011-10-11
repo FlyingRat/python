@@ -150,7 +150,7 @@ PyObject* _pysqlite_get_converter(PyObject* key)
 {
     PyObject* upcase_key;
     PyObject* retval;
-    _Py_IDENTIFIER(upper);
+    _Py_identifier(upper);
 
     upcase_key = _PyObject_CallMethodId(key, &PyId_upper, "");
     if (!upcase_key) {

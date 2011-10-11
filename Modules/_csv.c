@@ -1317,7 +1317,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
     WriterObj * self = PyObject_GC_New(WriterObj, &Writer_Type);
-    _Py_IDENTIFIER(write);
 
     if (!self)
         return NULL;
@@ -1334,7 +1333,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->writeline = _PyObject_GetAttrId(output_file, &PyId_write);
+    self->writeline = PyObject_GetAttrString(output_file, "write");
     if (self->writeline == NULL || !PyCallable_Check(self->writeline)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument 1 must have a \"write\" method");

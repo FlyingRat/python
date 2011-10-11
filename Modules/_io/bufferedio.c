@@ -13,17 +13,17 @@
 #include "pythread.h"
 #include "_iomodule.h"
 
-_Py_IDENTIFIER(close);
-_Py_IDENTIFIER(_dealloc_warn);
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(isatty);
-_Py_IDENTIFIER(peek);
-_Py_IDENTIFIER(read);
-_Py_IDENTIFIER(read1);
-_Py_IDENTIFIER(readable);
-_Py_IDENTIFIER(readinto);
-_Py_IDENTIFIER(writable);
-_Py_IDENTIFIER(write);
+_Py_identifier(close);
+_Py_identifier(_dealloc_warn);
+_Py_identifier(flush);
+_Py_identifier(isatty);
+_Py_identifier(peek);
+_Py_identifier(read);
+_Py_identifier(read1);
+_Py_identifier(readable);
+_Py_identifier(readinto);
+_Py_identifier(writable);
+_Py_identifier(write);
 
 /*
  * BufferedIOBase class, inherits from IOBase.
@@ -50,7 +50,7 @@ bufferediobase_readinto(PyObject *self, PyObject *args)
     Py_buffer buf;
     Py_ssize_t len;
     PyObject *data;
-    _Py_IDENTIFIER(read);
+    _Py_identifier(read);
 
     if (!PyArg_ParseTuple(args, "w*:readinto", &buf)) {
         return NULL;
@@ -622,14 +622,14 @@ static Py_ssize_t *
 _buffered_check_blocking_error(void)
 {
     PyObject *t, *v, *tb;
-    PyOSErrorObject *err;
+    PyBlockingIOErrorObject *err;
 
     PyErr_Fetch(&t, &v, &tb);
     if (v == NULL || !PyErr_GivenExceptionMatches(v, PyExc_BlockingIOError)) {
         PyErr_Restore(t, v, tb);
         return NULL;
     }
-    err = (PyOSErrorObject *) v;
+    err = (PyBlockingIOErrorObject *) v;
     /* TODO: sanity check (err->written >= 0) */
     PyErr_Restore(t, v, tb);
     return &err->written;

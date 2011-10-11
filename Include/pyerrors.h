@@ -45,18 +45,18 @@ typedef struct {
     PyObject *myerrno;
     PyObject *strerror;
     PyObject *filename;
-#ifdef MS_WINDOWS
-    PyObject *winerror;
-#endif
-    Py_ssize_t written;   /* only for BlockingIOError, -1 otherwise */
-} PyOSErrorObject;
+} PyEnvironmentErrorObject;
 
-/* Compatibility typedefs */
-typedef PyOSErrorObject PyEnvironmentErrorObject;
 #ifdef MS_WINDOWS
-typedef PyOSErrorObject PyWindowsErrorObject;
+typedef struct {
+    PyException_HEAD
+    PyObject *myerrno;
+    PyObject *strerror;
+    PyObject *filename;
+    PyObject *winerror;
+} PyWindowsErrorObject;
 #endif
-#endif /* !Py_LIMITED_API */
+#endif
 
 /* Error handling definitions */
 
@@ -132,9 +132,10 @@ PyAPI_DATA(PyObject *) PyExc_LookupError;
 
 PyAPI_DATA(PyObject *) PyExc_AssertionError;
 PyAPI_DATA(PyObject *) PyExc_AttributeError;
-PyAPI_DATA(PyObject *) PyExc_BufferError;
 PyAPI_DATA(PyObject *) PyExc_EOFError;
 PyAPI_DATA(PyObject *) PyExc_FloatingPointError;
+PyAPI_DATA(PyObject *) PyExc_EnvironmentError;
+PyAPI_DATA(PyObject *) PyExc_IOError;
 PyAPI_DATA(PyObject *) PyExc_OSError;
 PyAPI_DATA(PyObject *) PyExc_ImportError;
 PyAPI_DATA(PyObject *) PyExc_IndexError;
@@ -159,33 +160,14 @@ PyAPI_DATA(PyObject *) PyExc_UnicodeDecodeError;
 PyAPI_DATA(PyObject *) PyExc_UnicodeTranslateError;
 PyAPI_DATA(PyObject *) PyExc_ValueError;
 PyAPI_DATA(PyObject *) PyExc_ZeroDivisionError;
-
-PyAPI_DATA(PyObject *) PyExc_BlockingIOError;
-PyAPI_DATA(PyObject *) PyExc_BrokenPipeError;
-PyAPI_DATA(PyObject *) PyExc_ChildProcessError;
-PyAPI_DATA(PyObject *) PyExc_ConnectionError;
-PyAPI_DATA(PyObject *) PyExc_ConnectionAbortedError;
-PyAPI_DATA(PyObject *) PyExc_ConnectionRefusedError;
-PyAPI_DATA(PyObject *) PyExc_ConnectionResetError;
-PyAPI_DATA(PyObject *) PyExc_FileExistsError;
-PyAPI_DATA(PyObject *) PyExc_FileNotFoundError;
-PyAPI_DATA(PyObject *) PyExc_InterruptedError;
-PyAPI_DATA(PyObject *) PyExc_IsADirectoryError;
-PyAPI_DATA(PyObject *) PyExc_NotADirectoryError;
-PyAPI_DATA(PyObject *) PyExc_PermissionError;
-PyAPI_DATA(PyObject *) PyExc_ProcessLookupError;
-PyAPI_DATA(PyObject *) PyExc_TimeoutError;
-
-
-/* Compatibility aliases */
-PyAPI_DATA(PyObject *) PyExc_EnvironmentError;
-PyAPI_DATA(PyObject *) PyExc_IOError;
 #ifdef MS_WINDOWS
 PyAPI_DATA(PyObject *) PyExc_WindowsError;
 #endif
 #ifdef __VMS
 PyAPI_DATA(PyObject *) PyExc_VMSError;
 #endif
+
+PyAPI_DATA(PyObject *) PyExc_BufferError;
 
 PyAPI_DATA(PyObject *) PyExc_RecursionErrorInst;
 

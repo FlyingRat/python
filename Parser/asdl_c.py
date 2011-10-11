@@ -85,15 +85,7 @@ class EmitVisitor(asdl.VisitorBase):
 
     def __init__(self, file):
         self.file = file
-        self.identifiers = set()
         super(EmitVisitor, self).__init__()
-
-    def emit_identifier(self, name):
-        name = str(name)
-        if name in self.identifiers:
-            return
-        self.emit("_Py_identifier(%s);" % name, 0)
-        self.identifiers.add(name)
 
     def emit(self, s, depth, reflow=True):
         # XXX reflow long lines?
@@ -494,12 +486,12 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        self.emit("if (_PyObject_HasAttrId(obj, &PyId_%s)) {" % field.name, depth)
+        self.emit("if (PyObject_HasAttrString(obj, \"%s\")) {" % field.name, depth)
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
             self.emit("Py_ssize_t i;", depth+1)
-        self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth+1)
+        self.emit("tmp = PyObject_GetAttrString(obj, \"%s\");" % field.name, depth+1)
         self.emit("if (tmp == NULL) goto failed;", depth+1)
         if field.seq:
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
@@ -561,8 +553,6 @@ class PyTypesDeclareVisitor(PickleVisitor):
         self.emit("static PyTypeObject *%s_type;" % name, 0)
         self.emit("static PyObject* ast2obj_%s(void*);" % name, 0)
         if prod.fields:
-            for f in prod.fields:
-                self.emit_identifier(f.name)
             self.emit("static char *%s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
@@ -571,8 +561,6 @@ class PyTypesDeclareVisitor(PickleVisitor):
     def visitSum(self, sum, name):
         self.emit("static PyTypeObject *%s_type;" % name, 0)
         if sum.attributes:
-            for a in sum.attributes:
-                self.emit_identifier(a.name)
             self.emit("static char *%s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
@@ -592,8 +580,6 @@ class PyTypesDeclareVisitor(PickleVisitor):
     def visitConstructor(self, cons, name):
         self.emit("static PyTypeObject *%s_type;" % cons.name, 0)
         if cons.fields:
-            for t in cons.fields:
-                self.emit_identifier(t.name)
             self.emit("static char *%s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
@@ -606,11 +592,10 @@ class PyTypesVisitor(PickleVisitor):
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
-    _Py_identifier(_fields);
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
+    fields = PyObject_GetAttrString((PyObject*)Py_TYPE(self), "_fields");
     if (!fields)
         PyErr_Clear();
     if (fields) {
@@ -660,8 +645,7 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     PyObject *res;
-    _Py_identifier(__dict__);
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
+    PyObject *dict = PyObject_GetAttrString(self, "__dict__");
     if (dict == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -747,7 +731,6 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
     int i, result;
-    _Py_IDENTIFIER(_attributes);
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
         return 0;
@@ -759,7 +742,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
         }
         PyTuple_SET_ITEM(l, i, s);
     }
-    result = _PyObject_SetAttrId((PyObject*)type, &PyId__attributes, l) >= 0;
+    result = PyObject_SetAttrString((PyObject*)type, "_attributes", l) >= 0;
     Py_DECREF(l);
     return result;
 }
@@ -1025,7 +1008,7 @@ class ObjVisitor(PickleVisitor):
         for a in sum.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) < 0)' % a.name, 1)
+            self.emit('if (PyObject_SetAttrString(result, "%s", value) < 0)' % a.name, 1)
             self.emit('goto failed;', 2)
             self.emit('Py_DECREF(value);', 1)
         self.func_end()
@@ -1071,7 +1054,7 @@ class ObjVisitor(PickleVisitor):
             value = "o->v.%s.%s" % (name, field.name)
         self.set(field, value, depth)
         emit("if (!value) goto failed;", 0)
-        emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) == -1)' % field.name, 0)
+        emit('if (PyObject_SetAttrString(result, "%s", value) == -1)' % field.name, 0)
         emit("goto failed;", 1)
         emit("Py_DECREF(value);", 0)
 

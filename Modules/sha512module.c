@@ -526,11 +526,13 @@ SHA512_hexdigest(SHAobject *self, PyObject *unused)
 
     /* Make hex version of the digest */
     for (i=j=0; i<self->digestsize; i++) {
-        unsigned char c;
+        char c;
         c = (digest[i] >> 4) & 0xf;
-        hex_digest[j++] = Py_hexdigits[c];
+        c = (c>9) ? c+'a'-10 : c + '0';
+        hex_digest[j++] = c;
         c = (digest[i] & 0xf);
-        hex_digest[j++] = Py_hexdigits[c];
+        c = (c>9) ? c+'a'-10 : c + '0';
+        hex_digest[j++] = c;
     }
     return retval;
 }

@@ -850,6 +850,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 bytearray_repr(PyByteArrayObject *self)
 {
+    static const char *hexdigits = "0123456789abcdef";
     const char *quote_prefix = "bytearray(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
@@ -911,8 +912,8 @@ bytearray_repr(PyByteArrayObject *self)
         else if (c < ' ' || c >= 0x7f) {
             *p++ = '\\';
             *p++ = 'x';
-            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
-            *p++ = Py_hexdigits[c & 0xf];
+            *p++ = hexdigits[(c & 0xf0) >> 4];
+            *p++ = hexdigits[c & 0xf];
         }
         else
             *p++ = c;
@@ -2698,15 +2699,13 @@ static PyObject *
 bytearray_reduce(PyByteArrayObject *self)
 {
     PyObject *latin1, *dict;
-    _Py_IDENTIFIER(__dict__);
-
     if (self->ob_bytes)
         latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
                                         Py_SIZE(self), NULL);
     else
         latin1 = PyUnicode_FromString("");
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    dict = PyObject_GetAttrString((PyObject *)self, "__dict__");
     if (dict == NULL) {
         PyErr_Clear();
         dict = Py_None;

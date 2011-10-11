@@ -527,7 +527,7 @@ static PyObject *parsestrplus(struct compiling *, const node *n,
 static identifier
 new_identifier(const char* n, PyArena *arena)
 {
-    _Py_IDENTIFIER(normalize);
+    _Py_identifier(normalize);
     PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     if (!id || PyUnicode_READY(id) == -1)
         return NULL;

@@ -18,7 +18,7 @@ static int
 check_matched(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
-    _Py_IDENTIFIER(match);
+    _Py_identifier(match);
     int rc;
 
     if (obj == Py_None)
@@ -247,11 +247,10 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     PyObject *f_stderr;
     PyObject *name;
     char lineno_str[128];
-    _Py_IDENTIFIER(__name__);
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
-    name = _PyObject_GetAttrId(category, &PyId___name__);
+    name = PyObject_GetAttrString(category, "__name__");
     if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
         return;
 
@@ -654,9 +653,8 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 
     if (module_globals) {
-        _Py_IDENTIFIER(get_source);
-        _Py_IDENTIFIER(splitlines);
-        PyObject *tmp;
+        static PyObject *get_source_name = NULL;
+        static PyObject *splitlines_name = NULL;
         PyObject *loader;
         PyObject *module_name;
         PyObject *source;
@@ -664,12 +662,16 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *source_line;
         PyObject *returned;
 
-        if ((tmp = _PyUnicode_FromId(&PyId_get_source)) == NULL)
-            return NULL;
-        Py_DECREF(tmp);
-        if ((tmp = _PyUnicode_FromId(&PyId_splitlines)) == NULL)
-            return NULL;
-        Py_DECREF(tmp);
+        if (get_source_name == NULL) {
+            get_source_name = PyUnicode_InternFromString("get_source");
+            if (!get_source_name)
+                return NULL;
+        }
+        if (splitlines_name == NULL) {
+            splitlines_name = PyUnicode_InternFromString("splitlines");
+            if (!splitlines_name)
+                return NULL;
+        }
 
         /* Check/get the requisite pieces needed for the loader. */
         loader = PyDict_GetItemString(module_globals, "__loader__");
@@ -679,11 +681,11 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
             goto standard_call;
 
         /* Make sure the loader implements the optional get_source() method. */
-        if (!_PyObject_HasAttrId(loader, &PyId_get_source))
+        if (!PyObject_HasAttrString(loader, "get_source"))
                 goto standard_call;
         /* Call get_source() to get the source code. */
-        source = PyObject_CallMethodObjArgs(loader, PyId_get_source.object,
-                                            module_name, NULL);
+        source = PyObject_CallMethodObjArgs(loader, get_source_name,
+                                                module_name, NULL);
         if (!source)
             return NULL;
         else if (source == Py_None) {
@@ -692,9 +694,8 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs(source, 
-                                                 PyId_splitlines.object,
-                                                 NULL);
+        source_list = PyObject_CallMethodObjArgs(source, splitlines_name,
+                                                    NULL);
         Py_DECREF(source);
         if (!source_list)
             return NULL;

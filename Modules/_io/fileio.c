@@ -43,6 +43,12 @@
 #define SMALLCHUNK BUFSIZ
 #endif
 
+#if SIZEOF_INT < 4
+#define BIGCHUNK  (512 * 32)
+#else
+#define BIGCHUNK  (512 * 1024)
+#endif
+
 typedef struct {
     PyObject_HEAD
     int fd;
@@ -122,7 +128,7 @@ internal_close(fileio *self)
 static PyObject *
 fileio_close(fileio *self)
 {
-    _Py_IDENTIFIER(close);
+    _Py_identifier(close);
     if (!self->closefd) {
         self->fd = -1;
         Py_RETURN_NONE;
@@ -546,30 +552,31 @@ fileio_readinto(fileio *self, PyObject *args)
 static size_t
 new_buffersize(fileio *self, size_t currentsize
 #ifdef HAVE_FSTAT
-               , Py_off_t pos, Py_off_t end
+               , off_t pos, off_t end
 #endif
                )
 {
 #ifdef HAVE_FSTAT
-    if (end != (Py_off_t)-1) {
+    if (end != (off_t)-1) {
         /* Files claiming a size smaller than SMALLCHUNK may
            actually be streaming pseudo-files. In this case, we
            apply the more aggressive algorithm below.
         */
         if (end >= SMALLCHUNK && end >= pos && pos >= 0) {
             /* Add 1 so if the file were to grow we'd notice. */
-            Py_off_t bufsize = currentsize + end - pos + 1;
-            if (bufsize < PY_SSIZE_T_MAX)
-                return (size_t)bufsize;
-            else
-                return PY_SSIZE_T_MAX;
+            return currentsize + end - pos + 1;
         }
     }
 #endif
-    /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior. Use a less-than-double
-       growth factor to avoid excessive allocation. */
-    return currentsize + (currentsize >> 3) + 6;
+    if (currentsize > SMALLCHUNK) {
+        /* Keep doubling until we reach BIGCHUNK;
+           then keep adding BIGCHUNK. */
+        if (currentsize <= BIGCHUNK)
+            return currentsize + currentsize;
+        else
+            return currentsize + BIGCHUNK;
+    }
+    return currentsize + SMALLCHUNK;
 }
 
 static PyObject *
@@ -577,7 +584,7 @@ fileio_readall(fileio *self)
 {
 #ifdef HAVE_FSTAT
     struct stat st;
-    Py_off_t pos, end;
+    off_t pos, end;
 #endif
     PyObject *result;
     Py_ssize_t total = 0;
@@ -602,7 +609,7 @@ fileio_readall(fileio *self)
     if (fstat(self->fd, &st) == 0)
         end = st.st_size;
     else
-        end = (Py_off_t)-1;
+        end = (off_t)-1;
 #endif
     while (1) {
 #ifdef HAVE_FSTAT
