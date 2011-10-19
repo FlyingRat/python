@@ -10,10 +10,6 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #12281: Rewrite the MBCS codec to handle correctly replace and ignore
-  error handlers on all Windows versions. The MBCS codec is now supporting all
-  error handlers, instead of only replace to encode and ignore to decode.
-
 - Issue #13188: When called without an explicit traceback argument,
   generator.throw() now gets the traceback from the passed exception's
   ``__traceback__`` attribute.  Patch by Petri Lehtinen.
@@ -318,9 +314,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #6090: zipfile raises a ValueError when a document with a timestamp
-  earlier than 1980 is provided. Patch contributed by Petri Lehtinen.
 
 - Issue #13150: sysconfig no longer parses the Makefile and config.h files
   when imported, instead doing it at build time.  This makes importing
@@ -1455,7 +1448,7 @@ Tests
   the amount of time needed to run the tests. "make test" and "make quicktest"
   now include some resource-intensive tests, but no longer run the test suite
   twice to check for bugs in .pyc generation. Tools/scripts/run_test.py provides
-  as an easy platform-independent way to run test suite with sensible defaults.
+  an easy platform-independent way to run test suite with sensible defaults.
 
 - Issue #12331: The test suite for the packaging module can now run from an
   installed Python.
