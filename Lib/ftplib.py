@@ -175,8 +175,10 @@ class FTP:
 
     # Internal: "sanitize" a string for printing
     def sanitize(self, s):
-        if s[:5] in {'pass ', 'PASS '}:
-            i = len(s.rstrip('\r\n'))
+        if s[:5] == 'pass ' or s[:5] == 'PASS ':
+            i = len(s)
+            while i > 5 and s[i-1] in {'\r', '\n'}:
+                i = i-1
             s = s[:5] + '*'*(i-5) + s[i:]
         return repr(s)
 
@@ -594,7 +596,10 @@ class FTP:
         resp = self.sendcmd('SIZE ' + filename)
         if resp[:3] == '213':
             s = resp[3:].strip()
-            return int(s)
+            try:
+                return int(s)
+            except (OverflowError, ValueError):
+                return int(s)
 
     def mkd(self, dirname):
         '''Make a directory, return its full pathname.'''
@@ -856,7 +861,11 @@ def parse150(resp):
     m = _150_re.match(resp)
     if not m:
         return None
-    return int(m.group(1))
+    s = m.group(1)
+    try:
+        return int(s)
+    except (OverflowError, ValueError):
+        return int(s)
 
 
 _227_re = None

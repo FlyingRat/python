@@ -322,15 +322,8 @@ PyLong_FromDouble(double dval)
 #define PY_ABS_LONG_MIN         (0-(unsigned long)LONG_MIN)
 #define PY_ABS_SSIZE_T_MIN      (0-(size_t)PY_SSIZE_T_MIN)
 
-/* Get a C long int from a long int object or any object that has an __int__
-   method.
-
-   On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
-   the result.  Otherwise *overflow is 0.
-
-   For other errors (e.g., TypeError), return -1 and set an error condition.
-   In this case *overflow will be 0.
-*/
+/* Get a C long int from a long int object.
+   Returns -1 and sets an error condition if overflow occurs. */
 
 long
 PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
@@ -418,9 +411,6 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
     }
     return res;
 }
-
-/* Get a C long int from a long int object or any object that has an __int__
-   method.  Return -1 and set an error if overflow occurs. */
 
 long
 PyLong_AsLong(PyObject *obj)
@@ -933,7 +923,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 
 }
 
-/* Create a new long int object from a C pointer */
+/* Create a new long (or int) object from a C pointer */
 
 PyObject *
 PyLong_FromVoidPtr(void *p)
@@ -951,11 +941,15 @@ PyLong_FromVoidPtr(void *p)
 
 }
 
-/* Get a C pointer from a long int object. */
+/* Get a C pointer from a long object (or an int object in some cases) */
 
 void *
 PyLong_AsVoidPtr(PyObject *vv)
 {
+    /* This function will allow int or long objects. If vv is neither,
+       then the PyLong_AsLong*() functions will raise the exception:
+       PyExc_SystemError, "bad argument to internal function"
+    */
 #if SIZEOF_VOID_P <= SIZEOF_LONG
     long x;
 
@@ -1136,8 +1130,8 @@ PyLong_FromSize_t(size_t ival)
     return (PyObject *)v;
 }
 
-/* Get a C long long int from a long int object or any object that has an
-   __int__ method.  Return -1 and set an error if overflow occurs. */
+/* Get a C PY_LONG_LONG int from a long int object.
+   Return -1 and set an error if overflow occurs. */
 
 PY_LONG_LONG
 PyLong_AsLongLong(PyObject *vv)
@@ -1293,14 +1287,12 @@ PyLong_AsUnsignedLongLongMask(register PyObject *op)
 }
 #undef IS_LITTLE_ENDIAN
 
-/* Get a C long long int from a long int object or any object that has an
-   __int__ method.
+/* Get a C long long int from a Python long or Python int object.
+   On overflow, returns -1 and sets *overflow to 1 or -1 depending
+   on the sign of the result.  Otherwise *overflow is 0.
 
-   On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
-   the result.  Otherwise *overflow is 0.
-
-   For other errors (e.g., TypeError), return -1 and set an error condition.
-   In this case *overflow will be 0.
+   For other errors (e.g., type error), returns -1 and sets an error
+   condition.
 */
 
 PY_LONG_LONG

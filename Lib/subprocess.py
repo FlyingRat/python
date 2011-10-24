@@ -450,8 +450,10 @@ def _eintr_retry_call(func, *args):
     while True:
         try:
             return func(*args)
-        except InterruptedError:
-            continue
+        except (OSError, IOError) as e:
+            if e.errno == errno.EINTR:
+                continue
+            raise
 
 
 def call(*popenargs, timeout=None, **kwargs):

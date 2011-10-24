@@ -1834,9 +1834,18 @@ class ContextAPItests(unittest.TestCase):
         # only, the attribute should be gettable/settable via both
         # `clamp` and `_clamp`; in Python 3.3, `_clamp` should be
         # removed.
-        c = Context()
-        with self.assertRaises(AttributeError):
-            clamp_value = c._clamp
+        c = Context(clamp = 0)
+        self.assertEqual(c.clamp, 0)
+
+        with check_warnings(("", DeprecationWarning)):
+            c._clamp = 1
+        self.assertEqual(c.clamp, 1)
+        with check_warnings(("", DeprecationWarning)):
+            self.assertEqual(c._clamp, 1)
+        c.clamp = 0
+        self.assertEqual(c.clamp, 0)
+        with check_warnings(("", DeprecationWarning)):
+            self.assertEqual(c._clamp, 0)
 
     def test_abs(self):
         c = Context()
