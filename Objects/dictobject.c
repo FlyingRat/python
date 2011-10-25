@@ -1314,18 +1314,14 @@ dict_fromkeys(PyObject *cls, PyObject *args)
         PyObject *key;
         Py_hash_t hash;
 
-        if (dictresize(mp, Py_SIZE(seq))) {
-            Py_DECREF(d);
+        if (dictresize(mp, Py_SIZE(seq)))
             return NULL;
-        }
 
         while (_PyDict_Next(seq, &pos, &key, &oldvalue, &hash)) {
             Py_INCREF(key);
             Py_INCREF(value);
-            if (insertdict(mp, key, hash, value)) {
-                Py_DECREF(d);
+            if (insertdict(mp, key, hash, value))
                 return NULL;
-            }
         }
         return d;
     }
@@ -1336,18 +1332,14 @@ dict_fromkeys(PyObject *cls, PyObject *args)
         PyObject *key;
         Py_hash_t hash;
 
-        if (dictresize(mp, PySet_GET_SIZE(seq))) {
-            Py_DECREF(d);
+        if (dictresize(mp, PySet_GET_SIZE(seq)))
             return NULL;
-        }
 
         while (_PySet_NextEntry(seq, &pos, &key, &hash)) {
             Py_INCREF(key);
             Py_INCREF(value);
-            if (insertdict(mp, key, hash, value)) {
-                Py_DECREF(d);
+            if (insertdict(mp, key, hash, value))
                 return NULL;
-            }
         }
         return d;
     }
