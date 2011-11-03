@@ -566,7 +566,7 @@ The module :mod:`curses` defines the following functions:
 
    Instantiate the string *str* with the supplied parameters, where *str* should
    be a parameterized string obtained from the terminfo database.  E.g.
-   ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
+   ``tparm(tigetstr("cup"), 5, 3)`` could result in ``'\033[6;4H'``, the exact
    result depending on terminal type.
 
 
@@ -596,6 +596,17 @@ The module :mod:`curses` defines the following functions:
    .. note::
 
       Only one *ch* can be pushed before :meth:`getch` is called.
+
+
+.. function:: unget_wch(ch)
+
+   Push *ch* so the next :meth:`get_wch` will return it.
+
+   .. note::
+
+      Only one *ch* can be pushed before :meth:`get_wch` is called.
+
+   .. versionadded:: 3.3
 
 
 .. function:: ungetmouse(id, x, y, z, bstate)
@@ -844,6 +855,14 @@ the following methods:
    range: function keys, keypad keys and so on return numbers higher than 256. In
    no-delay mode, -1 is returned if there is no input, else :func:`getch` waits
    until a key is pressed.
+
+
+.. method:: window.get_wch([y, x])
+
+   Get a wide character. Like :meth:`getch`, but the integer returned is the
+   Unicode code point for the key pressed, so it can be passed to :func:`chr`.
+
+   .. versionadded:: 3.3
 
 
 .. method:: window.getkey([y, x])
