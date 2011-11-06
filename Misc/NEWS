@@ -10,17 +10,6 @@ What's New in Python 3.3 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #13327: Remove the need for an explicit None as the second argument
-  to os.utime in order to update to the current time.
-
-- Issue #13350: Simplify some C code by replacing most usages of
-  PyUnicode_Format by PyUnicode_FromFormat.
-
-- Issue #13342: input() used to ignore sys.stdin's and sys.stdout's unicode
-  error handler in interactive mode (when calling into PyOS_Readline()).
-
-- Issue #9896: Add start, stop, and step attributes to range objects.
-
 - Issue #13343: Fix a SystemError when a lambda expression uses a global
   variable in the default value of a keyword-only argument:
   (lambda *, arg=GLOBAL_NAME: None)
@@ -294,8 +283,6 @@ Core and Builtins
 - Issue #11320: fix bogus memory management in Modules/getpath.c, leading to
   a possible crash when calling Py_SetPath().
 
-- _ast.__version__ is now a Mercurial hex revision.
-
 - Issue #11432: A bug was introduced in subprocess.Popen on posix systems with
   3.2.0 where the stdout or stderr file descriptor being the same as the stdin
   file descriptor would raise an exception. webbrowser.open would fail. fixed.
@@ -380,7 +367,7 @@ Library
 - Byte compilation in packaging is now isolated from the calling Python -B or
   -O options, instead of being disallowed under -B or buggy under -O.
 
-- Issue #10570: curses.putp() and curses.tparm() are now expecting a byte
+- Issue #10570: curses.putp() and curses.tigetstr() are now expecting a byte
   string, instead of a Unicode string.
 
 - Issue #13295: http.server now produces valid HTML 4.01 strict.
@@ -1456,8 +1443,6 @@ Library
 Build
 -----
 
-- Issue #13326: Clean __pycache__ directories correctly on OpenBSD.
-
 - PEP 393: the configure option --with-wide-unicode is removed.
 
 - Issue #12852: Set _XOPEN_SOURCE to 700, instead of 600, to get POSIX 2008
@@ -1554,8 +1539,6 @@ Extension Modules
 - Issue #10309: Define _GNU_SOURCE so that mremap() gets the proper
   signature.  Without this, architectures where sizeof void* != sizeof int are
   broken.  Patch given by Hallvard B Furuseth.
-
-- Issue #12221: Replace pyexpat.__version__ with the Python version.
 
 - Issue #12051: Fix segfault in json.dumps() while encoding highly-nested
   objects using the C accelerations.
