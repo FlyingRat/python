@@ -1066,7 +1066,7 @@ class saved_test_environment:
         keys = set(packaging.command._COMMANDS)
         return id_, keys
     def restore_packaging_command__COMMANDS(self, saved):
-        # if command._COMMANDS was bound to another dict obhect, we can't
+        # if command._COMMANDS was bound to another dict object, we can't
         # restore the previous object and contents, because the get_ method
         # above does not return the dict object (to ignore changes in values)
         for key in packaging.command._COMMANDS.keys() - saved[1]:
@@ -1462,7 +1462,6 @@ _expectations = (
         test_crypt
         test_curses
         test_dbm
-        test_devpoll
         test_fcntl
         test_fork1
         test_epoll
@@ -1489,7 +1488,6 @@ _expectations = (
     ('linux',
         """
         test_curses
-        test_devpoll
         test_largefile
         test_kqueue
         test_ossaudiodev
@@ -1540,7 +1538,6 @@ _expectations = (
         """
         test__locale
         test_curses
-        test_devpoll
         test_epoll
         test_dbm_gnu
         test_gdb
@@ -1582,7 +1579,6 @@ _expectations = (
         """
         test_curses
         test_dbm
-        test_devpoll
         test_epoll
         test_ioctl
         test_kqueue
@@ -1607,7 +1603,6 @@ _expectations = (
         """),
     ('freebsd',
         """
-        test_devpoll
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1641,7 +1636,6 @@ _expectations = (
     ('openbsd',
         """
         test_ctypes
-        test_devpoll
         test_epoll
         test_dbm_gnu
         test_locale
@@ -1658,7 +1652,6 @@ _expectations = (
         """
         test_ctypes
         test_curses
-        test_devpoll
         test_epoll
         test_dbm_gnu
         test_locale
