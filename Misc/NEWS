@@ -10,9 +10,6 @@ What's New in Python 3.2.3?
 Core and Builtins
 -----------------
 
-- Issue #13436: Fix a bogus error message when an AST object was passed
-  an invalid integer value.
-
 - Issue #13338: Handle all enumerations in _Py_ANNOTATE_MEMORY_ORDER
   to allow compiling extension modules with -Wswitch-enum on gcc.
   Initial patch by Floris Bruynooghe.
@@ -82,6 +79,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #13415: os.unsetenv() doesn't ignore errors anymore.
 
 - Issue #13322: Fix BufferedWriter.write() to ensure that BlockingIOError is
   raised when the wrapped raw file is non-blocking and the write would block.
