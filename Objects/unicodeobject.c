@@ -66,9 +66,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
-/* Maximum code point of Unicode 6.0: 0x10ffff (1,114,111) */
-#define MAX_UNICODE 0x10ffff
-
 #ifdef Py_DEBUG
 #  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op, 0)
 #else
@@ -396,7 +393,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         }
         else {
             assert(maxchar >= 0x10000);
-            assert(maxchar <= MAX_UNICODE);
+            /* FIXME: Issue #13441: on Solaris, localeconv() and strxfrm()
+               return characters outside the range U+0000-U+10FFFF. */
+            /* assert(maxchar <= 0x10FFFF); */
         }
     }
     return 1;
@@ -1296,37 +1295,36 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
                         Py_UCS4 *maxchar, Py_ssize_t *num_surrogates)
 {
     const wchar_t *iter;
-    Py_UCS4 ch;
 
     assert(num_surrogates != NULL && maxchar != NULL);
     *num_surrogates = 0;
     *maxchar = 0;
 
     for (iter = begin; iter < end; ) {
+        if (*iter > *maxchar) {
+            *maxchar = *iter;
+#if SIZEOF_WCHAR_T != 2
+            if (*maxchar >= 0x10000)
+                return 0;
+#endif
+        }
 #if SIZEOF_WCHAR_T == 2
         if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
             && (iter+1) < end
             && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
         {
-            ch = Py_UNICODE_JOIN_SURROGATES(iter[0], iter[1]);
+            Py_UCS4 surrogate_val;
+            surrogate_val = Py_UNICODE_JOIN_SURROGATES(iter[0], iter[1]);
             ++(*num_surrogates);
+            if (surrogate_val > *maxchar)
+                *maxchar = surrogate_val;
             iter += 2;
         }
         else
-#endif
-        {
-            ch = *iter;
             iter++;
-        }
-        if (ch > *maxchar) {
-            *maxchar = ch;
-            if (*maxchar > MAX_UNICODE) {
-                PyErr_Format(PyExc_ValueError,
-                             "character U+%x is not in range [U+0000; U+10ffff]",
-                             ch);
-                return -1;
-            }
-        }
+#else
+        iter++;
+#endif
     }
     return 0;
 }
@@ -1671,7 +1669,8 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
                                 &maxchar, &num_surrogates) == -1)
         return NULL;
 
-    unicode = PyUnicode_New(size - num_surrogates, maxchar);
+    unicode = PyUnicode_New(size - num_surrogates,
+                                                maxchar);
     if (!unicode)
         return NULL;
 
@@ -1809,7 +1808,7 @@ kind_maxchar_limit(unsigned int kind)
         return 0x10000;
     default:
         assert(0 && "invalid kind");
-        return MAX_UNICODE;
+        return 0x10ffff;
     }
 }
 
@@ -2797,7 +2796,7 @@ PyObject *
 PyUnicode_FromOrdinal(int ordinal)
 {
     PyObject *v;
-    if (ordinal < 0 || ordinal > MAX_UNICODE) {
+    if (ordinal < 0 || ordinal > 0x10ffff) {
         PyErr_SetString(PyExc_ValueError,
                         "chr() arg not in range(0x110000)");
         return NULL;
@@ -3473,7 +3472,7 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
             four_bytes = PyUnicode_4BYTE_DATA(unicode);
             for (; four_bytes < ucs4_end; ++four_bytes, ++w) {
                 if (*four_bytes > 0xFFFF) {
-                    assert(*four_bytes <= MAX_UNICODE);
+                    assert(*four_bytes <= 0x10FFFF);
                     /* encode surrogate pair in this case */
                     *w++ = Py_UNICODE_HIGH_SURROGATE(*four_bytes);
                     *w   = Py_UNICODE_LOW_SURROGATE(*four_bytes);
@@ -4119,7 +4118,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
         continue;
 encode_char:
         if (ch >= 0x10000) {
-            assert(ch <= MAX_UNICODE);
+            assert(ch <= 0x10FFFF);
 
             /* code first surrogate */
             base64bits += 16;
@@ -4578,7 +4577,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             }
             ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
                  ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
-            assert ((ch > 0xFFFF) && (ch <= MAX_UNICODE));
+            assert ((ch > 0xFFFF) && (ch <= 0x10ffff));
 
             WRITE_MAYBE_FAIL(i++, ch);
             break;
@@ -4715,7 +4714,7 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
             }
             ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
                  ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
-            assert ((ch > 0xFFFF) && (ch <= MAX_UNICODE));
+            assert ((ch > 0xFFFF) && (ch <= 0x10ffff));
 
 #if SIZEOF_WCHAR_T == 4
             *p++ = (wchar_t)ch;
@@ -4885,7 +4884,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
         } else /* ch >= 0x10000 */ {
-            assert(ch <= MAX_UNICODE);
+            assert(ch <= 0x10FFFF);
             /* Encode UCS4 Unicode ordinals */
             *p++ = (char)(0xf0 | (ch >> 18));
             *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
@@ -5793,7 +5792,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                 break;
         store:
             /* when we get here, chr is a 32-bit unicode character */
-            if (chr <= MAX_UNICODE) {
+            if (chr <= 0x10ffff) {
                 WRITECHAR(chr);
             } else {
                 endinpos = s-starts;
@@ -5958,7 +5957,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
         /* Map 21-bit characters to '\U00xxxxxx' */
         else if (ch >= 0x10000) {
-            assert(ch <= MAX_UNICODE);
+            assert(ch <= 0x10FFFF);
             *p++ = '\\';
             *p++ = 'U';
             *p++ = Py_hexdigits[(ch >> 28) & 0x0000000F];
@@ -6109,7 +6108,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
             else
                 x += 10 + c - 'A';
         }
-        if (x <= MAX_UNICODE) {
+        if (x <= 0x10ffff) {
             if (unicode_putchar(&v, &outpos, x) < 0)
                 goto onError;
         } else {
@@ -6176,7 +6175,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
-            assert(ch <= MAX_UNICODE);
+            assert(ch <= 0x10FFFF);
             *p++ = '\\';
             *p++ = 'U';
             *p++ = Py_hexdigits[(ch >> 28) & 0xf];
@@ -6537,7 +6536,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     else if (ch < 1000000)
                         repsize += 2+6+1;
                     else {
-                        assert(ch <= MAX_UNICODE);
+                        assert(ch <= 0x10FFFF);
                         repsize += 2+7+1;
                     }
                 }
@@ -9276,7 +9275,7 @@ fixup(PyObject *self,
     else if (maxchar_new <= 65535)
         maxchar_new = 65535;
     else
-        maxchar_new = MAX_UNICODE;
+        maxchar_new = 1114111; /* 0x10ffff */
 
     if (!maxchar_new && PyUnicode_CheckExact(self)) {
         /* fixfct should return TRUE if it modified the buffer. If
@@ -13060,7 +13059,7 @@ formatchar(PyObject *v)
         if (x == -1 && PyErr_Occurred())
             goto onError;
 
-        if (x < 0 || x > MAX_UNICODE) {
+        if (x < 0 || x > 0x10ffff) {
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x110000)");
             return (Py_UCS4) -1;
