@@ -461,10 +461,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #13847: time.localtime() and time.gmtime() now raise an OSError instead
-  of ValueError on failure. time.ctime() and time.asctime() now raises an
-  OSError if localtime() failed.
-
 - Issue #13862: Fix spurious failure in test_zlib due to runtime/compile time
   minor versions not matching.
 
@@ -1841,9 +1837,6 @@ Tools/Demos
 Extension Modules
 -----------------
 
-- Issue #13840: The error message produced by ctypes.create_string_buffer
-  when given a Unicode string has been fixed.
-
 - Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
   Vilmos Nebehaj.
 
@@ -2123,6 +2116,8 @@ C-API
 
 Documentation
 -------------
+
+- Issue #13883: PYTHONCASEOK also works on OS X.
 
 - Issue #12949: Document the kwonlyargcount argument for the PyCode_New
   C API function.
