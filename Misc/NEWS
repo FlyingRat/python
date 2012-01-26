@@ -402,9 +402,6 @@ Tests
 Extension Modules
 -----------------
 
-- Issue #13840: The error message produced by ctypes.create_string_buffer
-  when given a Unicode string has been fixed.
-
 - Issue #9975: socket: Fix incorrect use of flowinfo and scope_id. Patch by
   Vilmos Nebehaj.
 
@@ -434,6 +431,8 @@ Extension Modules
 
 Documentation
 -------------
+
+- Issue #13883: PYTHONCASEOK also used on OS X and OS/2.
 
 - Issue #12949: Document the kwonlyargcount argument for the PyCode_New
   C API function.
