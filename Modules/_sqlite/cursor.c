@@ -267,9 +267,9 @@ PyObject* _pysqlite_build_column_name(const char* colname)
     }
 }
 
-PyObject* pysqlite_unicode_from_string(const char* val_str, Py_ssize_t size, int optimize)
+PyObject* pysqlite_unicode_from_string(const char* val_str, int optimize)
 {
-    return PyUnicode_FromStringAndSize(val_str, size);
+    return PyUnicode_FromString(val_str);
 }
 
 /*
@@ -354,11 +354,10 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 converted = PyFloat_FromDouble(sqlite3_column_double(self->statement->st, i));
             } else if (coltype == SQLITE_TEXT) {
                 val_str = (const char*)sqlite3_column_text(self->statement->st, i);
-                nbytes = sqlite3_column_bytes(self->statement->st, i);
                 if ((self->connection->text_factory == (PyObject*)&PyUnicode_Type)
                     || (self->connection->text_factory == pysqlite_OptimizedUnicode)) {
 
-                    converted = pysqlite_unicode_from_string(val_str, nbytes,
+                    converted = pysqlite_unicode_from_string(val_str,
                         self->connection->text_factory == pysqlite_OptimizedUnicode ? 1 : 0);
 
                     if (!converted) {
@@ -383,11 +382,11 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                         }
                     }
                 } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
-                    converted = PyBytes_FromStringAndSize(val_str, nbytes);
+                    converted = PyBytes_FromString(val_str);
                 } else if (self->connection->text_factory == (PyObject*)&PyByteArray_Type) {
-                    converted = PyByteArray_FromStringAndSize(val_str, nbytes);
+                    converted = PyByteArray_FromStringAndSize(val_str, strlen(val_str));
                 } else {
-                    converted = PyObject_CallFunction(self->connection->text_factory, "y#", val_str, nbytes);
+                    converted = PyObject_CallFunction(self->connection->text_factory, "y", val_str);
                 }
             } else {
                 /* coltype == SQLITE_BLOB */
