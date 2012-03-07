@@ -130,6 +130,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13719: Make the distutils upload command aware of bdist_msi products.
+
 - Issue #14195: An issue that caused weakref.WeakSet instances to incorrectly
   return True for a WeakSet instance 'a' in both 'a < a' and 'a > a' has been
   fixed.
@@ -546,6 +548,9 @@ Tests
 
 Extension Modules
 -----------------
+
+- Issue #14212: The re module didn't retain a reference to buffers it was
+  scanning, resulting in segfaults.
 
 - Issue #13840: The error message produced by ctypes.create_string_buffer
   when given a Unicode string has been fixed.
