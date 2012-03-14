@@ -107,9 +107,19 @@ class TestCallable(unittest.TestCase):
         class Multi(SomeClass, Sub):
             pass
 
+        class OldStyle:
+            def __call__(self):
+                pass
+
+        class OldStyleSub(OldStyle):
+            pass
+
         for arg in 'spec', 'spec_set':
-            for Klass in CallableX, Sub, Multi:
-                with patch('%s.X' % __name__, **{arg: Klass}) as mock:
+            for Klass in CallableX, Sub, Multi, OldStyle, OldStyleSub:
+                patcher = patch('%s.X' % __name__, **{arg: Klass})
+                mock = patcher.start()
+
+                try:
                     instance = mock()
                     mock.assert_called_once_with()
 
@@ -126,6 +136,8 @@ class TestCallable(unittest.TestCase):
                     result.assert_called_once_with(3, 2, 1)
                     result.foo(3, 2, 1)
                     result.foo.assert_called_once_with(3, 2, 1)
+                finally:
+                    patcher.stop()
 
 
     def test_create_autopsec(self):
