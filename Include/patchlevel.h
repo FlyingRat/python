@@ -2,7 +2,7 @@
 /* Python version identification scheme.
 
    When the major or minor version changes, the VERSION variable in
-   configure.ac must also be changed.
+   configure.in must also be changed.
 
    There is also (independent) API version information in modsupport.h.
 */
@@ -20,10 +20,10 @@
 #define PY_MINOR_VERSION	1
 #define PY_MICRO_VERSION	5
 #define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_GAMMA
-#define PY_RELEASE_SERIAL	1
+#define PY_RELEASE_SERIAL	2
 
 /* Version as a string */
-#define PY_VERSION      	"3.1.5rc1"
+#define PY_VERSION      	"3.1.5rc2"
 /*--end constants--*/
 
 /* Subversion Revision number of this file (not of the repository). Empty
