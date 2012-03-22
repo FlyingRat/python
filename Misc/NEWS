@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14378: Fix compiling ast.ImportFrom nodes with a "__future__" string as
+  the module name that was not interned.
+
 - Issue #14331: Use significantly less stack space when importing modules by
   allocating path buffers on the heap instead of the stack.
 
@@ -26,15 +29,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #12757: Fix the skipping of doctests when python is run with -OO so
-  that it works in unittest's verbose mode as well as non-verbose mode.
-
-- Issue #3573: IDLE hangs when passing invalid command line args
-  (directory(ies) instead of file(s)) (Patch by Guilherme Polo)
-
-- Issue #13694: asynchronous connect in asyncore.dispatcher does not set addr
-  attribute.
 
 - Issue #10484: Fix the CGIHTTPServer's PATH_INFO handling problem.
 
