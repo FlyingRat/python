@@ -13,6 +13,7 @@
 
 """
 import re,sys
+import TextTools
 
 entityRE = re.compile('<!ENTITY +(\w+) +CDATA +"([^"]+)" +-- +((?:.|\n)+?) *-->')
 
@@ -44,7 +45,7 @@ def writefile(f,defs):
                 charcode = repr(charcode)
         else:
             charcode = repr(charcode)
-        comment = ' '.join(comment.split())
+        comment = TextTools.collapse(comment)
         f.write("    '%s':\t%s,  \t# %s\n" % (name,charcode,comment))
     f.write('\n}\n')
 

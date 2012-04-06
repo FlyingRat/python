@@ -430,7 +430,7 @@ All methods are executed atomically.
    are blocked waiting for the lock to become unlocked, allow exactly one of them
    to proceed.
 
-   When invoked on an unlocked lock, a :exc:`ThreadError` is raised.
+   Do not call this method when the lock is unlocked.
 
    There is no return value.
 

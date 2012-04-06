@@ -76,31 +76,29 @@ usage = """Usage: %s [-cd] paths...
     -c: recognize Python source files trying to compile them
     -d: debug output""" % sys.argv[0]
 
-if __name__ == '__main__':
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'cd')
+except getopt.error as msg:
+    print(msg, file=sys.stderr)
+    print(usage, file=sys.stderr)
+    sys.exit(1)
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cd')
-    except getopt.error as msg:
-        print(msg, file=sys.stderr)
-        print(usage, file=sys.stderr)
-        sys.exit(1)
+is_python = pysource.looks_like_python
+debug = False
 
-    is_python = pysource.looks_like_python
-    debug = False
+for o, a in opts:
+    if o == '-c':
+        is_python = pysource.can_be_compiled
+    elif o == '-d':
+        debug = True
 
-    for o, a in opts:
-        if o == '-c':
-            is_python = pysource.can_be_compiled
-        elif o == '-d':
-            debug = True
+if not args:
+    print(usage, file=sys.stderr)
+    sys.exit(1)
 
-    if not args:
-        print(usage, file=sys.stderr)
-        sys.exit(1)
-
-    for fullpath in pysource.walk_python_files(args, is_python):
-        if debug:
-            print("Testing for coding: %s" % fullpath)
-        result = needs_declaration(fullpath)
-        if result:
-            print(fullpath)
+for fullpath in pysource.walk_python_files(args, is_python):
+    if debug:
+        print("Testing for coding: %s" % fullpath)
+    result = needs_declaration(fullpath)
+    if result:
+        print(fullpath)

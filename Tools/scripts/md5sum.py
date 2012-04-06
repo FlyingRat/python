@@ -20,7 +20,7 @@ file ...  : files to sum; '-' or no files means stdin
 import sys
 import os
 import getopt
-from hashlib import md5
+import md5
 
 def sum(*files):
     sts = 0
