@@ -3,7 +3,6 @@ from . import util as import_util
 import sys
 import unittest
 import importlib
-from test import support
 
 
 class ParentModuleTests(unittest.TestCase):
@@ -39,10 +38,7 @@ class ParentModuleTests(unittest.TestCase):
                                          module_code={'mod': module_injection})
         with mock_modules as mock:
             with util.import_state(meta_path=[mock]):
-                try:
-                    submodule = import_util.import_(subname)
-                finally:
-                    support.unload(subname)
+                submodule = import_util.import_(subname)
 
 
 def test_main():
