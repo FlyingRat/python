@@ -6538,7 +6538,9 @@ unicode_hash(PyUnicodeObject *self)
     register Py_UNICODE *p;
     register long x;
 
+#ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
+#endif
     if (self->hash != -1)
         return self->hash;
     len = PyUnicode_GET_SIZE(self);
@@ -7795,6 +7797,10 @@ unicode_getnewargs(PyUnicodeObject *v)
 
 
 static PyMethodDef unicode_methods[] = {
+
+    /* Order is according to common usage: often used methods should
+       appear first, since lookup is done sequentially. */
+
     {"encode", (PyCFunction) unicode_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
     {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
