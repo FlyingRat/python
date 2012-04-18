@@ -10,10 +10,12 @@ What's New in Python 3.3.0 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #12599: Be more strict in accepting None compared to a false-like
+  object for importlib.util.module_for_loader and
+  importlib.machinery.PathFinder.
+
 - Issue #14592: Attempting a relative import w/o __package__ or __name__ set in
   globals raises a KeyError.
-
-- Issue #14607: Fix defaults keyword-only arguments which started with ``__``.
 
 - Issue #10854: The ImportError raised when an extension module on Windows
   fails to import now uses the new path and name attributes from
