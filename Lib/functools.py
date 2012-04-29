@@ -185,9 +185,7 @@ def lru_cache(maxsize=100, typed=False):
             key = args
             if kwds:
                 sorted_items = tuple(sorted(kwds.items()))
-                key += kwd_mark
-                key += tuple(k for k, v in sorted_items)
-                key += tuple(v for k, v in sorted_items)
+                key += kwd_mark + sorted_items
             if typed:
                 key += tuple(type(v) for v in args)
                 if kwds:
