@@ -33,7 +33,7 @@ class UnseekableIO(io.BytesIO):
         raise io.UnsupportedOperation
 
 
-class BaseTest(unittest.TestCase):
+class TestGzip(unittest.TestCase):
     filename = support.TESTFN
 
     def setUp(self):
@@ -43,7 +43,6 @@ class BaseTest(unittest.TestCase):
         support.unlink(self.filename)
 
 
-class TestGzip(BaseTest):
     def test_write(self):
         with gzip.GzipFile(self.filename, 'wb') as f:
             f.write(data1 * 50)
@@ -116,14 +115,14 @@ class TestGzip(BaseTest):
         # Bug #1074261 was triggered when reading a file that contained
         # many, many members.  Create such a file and verify that reading it
         # works.
-        with gzip.GzipFile(self.filename, 'wb', 9) as f:
+        with gzip.open(self.filename, 'wb', 9) as f:
             f.write(b'a')
         for i in range(0, 200):
-            with gzip.GzipFile(self.filename, "ab", 9) as f: # append
+            with gzip.open(self.filename, "ab", 9) as f: # append
                 f.write(b'a')
 
         # Try reading the file
-        with gzip.GzipFile(self.filename, "rb") as zgfile:
+        with gzip.open(self.filename, "rb") as zgfile:
             contents = b""
             while 1:
                 ztxt = zgfile.read(8192)
@@ -375,9 +374,10 @@ class TestGzip(BaseTest):
             datac = gzip.compress(data)
             self.assertEqual(gzip.decompress(datac), data)
 
+    # Test the 'open' convenience function.
 
-class TestOpen(BaseTest):
-    def test_binary_modes(self):
+    def test_open_binary(self):
+        # Test explicit binary modes.
         uncompressed = data1 * 50
         with gzip.open(self.filename, "wb") as f:
             f.write(uncompressed)
@@ -392,7 +392,7 @@ class TestOpen(BaseTest):
             file_data = gzip.decompress(f.read())
             self.assertEqual(file_data, uncompressed * 2)
 
-    def test_implicit_binary_modes(self):
+    def test_open_default_binary(self):
         # Test implicit binary modes (no "b" or "t" in mode string).
         uncompressed = data1 * 50
         with gzip.open(self.filename, "w") as f:
@@ -408,7 +408,8 @@ class TestOpen(BaseTest):
             file_data = gzip.decompress(f.read())
             self.assertEqual(file_data, uncompressed * 2)
 
-    def test_text_modes(self):
+    def test_open_text(self):
+        # Test text modes.
         uncompressed = data1.decode("ascii") * 50
         with gzip.open(self.filename, "wt") as f:
             f.write(uncompressed)
@@ -423,7 +424,7 @@ class TestOpen(BaseTest):
             file_data = gzip.decompress(f.read()).decode("ascii")
             self.assertEqual(file_data, uncompressed * 2)
 
-    def test_bad_params(self):
+    def test_open_bad_params(self):
         # Test invalid parameter combinations.
         with self.assertRaises(ValueError):
             gzip.open(self.filename, "wbt")
@@ -434,7 +435,7 @@ class TestOpen(BaseTest):
         with self.assertRaises(ValueError):
             gzip.open(self.filename, "rb", newline="\n")
 
-    def test_encoding(self):
+    def test_open_with_encoding(self):
         # Test non-default encoding.
         uncompressed = data1.decode("ascii") * 50
         with gzip.open(self.filename, "wt", encoding="utf-16") as f:
@@ -445,7 +446,7 @@ class TestOpen(BaseTest):
         with gzip.open(self.filename, "rt", encoding="utf-16") as f:
             self.assertEqual(f.read(), uncompressed)
 
-    def test_encoding_error_handler(self):
+    def test_open_with_encoding_error_handler(self):
         # Test with non-default encoding error handler.
         with gzip.open(self.filename, "wb") as f:
             f.write(b"foo\xffbar")
@@ -453,7 +454,7 @@ class TestOpen(BaseTest):
                 as f:
             self.assertEqual(f.read(), "foobar")
 
-    def test_newline(self):
+    def test_open_with_newline(self):
         # Test with explicit newline (universal newline mode disabled).
         uncompressed = data1.decode("ascii") * 50
         with gzip.open(self.filename, "wt") as f:
@@ -462,7 +463,7 @@ class TestOpen(BaseTest):
             self.assertEqual(f.readlines(), [uncompressed])
 
 def test_main(verbose=None):
-    support.run_unittest(TestGzip, TestOpen)
+    support.run_unittest(TestGzip)
 
 if __name__ == "__main__":
     test_main(verbose=True)
