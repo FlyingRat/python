@@ -83,7 +83,6 @@ This module also provides the following helper function:
       contents of the inputs via a timing attack, it does leak the length
       of the inputs. However, this generally is not a security risk.
 
-   .. versionadded:: 3.3
 
 .. seealso::
 

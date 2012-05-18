@@ -277,7 +277,7 @@ asyncore Example basic HTTP client
 Here is a very basic HTTP client that uses the :class:`dispatcher` class to
 implement its socket handling::
 
-   import asyncore
+   import asyncore, socket
 
    class HTTPClient(asyncore.dispatcher):
 
@@ -317,6 +317,7 @@ Here is a basic echo server that uses the :class:`dispatcher` class to accept
 connections and dispatches the incoming connections to a handler::
 
     import asyncore
+    import socket
 
     class EchoHandler(asyncore.dispatcher_with_send):
 
@@ -340,3 +341,4 @@ connections and dispatches the incoming connections to a handler::
 
     server = EchoServer('localhost', 8080)
     asyncore.loop()
+

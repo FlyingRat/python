@@ -388,18 +388,18 @@ class ExceptionTests(unittest.TestCase):
     def testChainingAttrs(self):
         e = Exception()
         self.assertIsNone(e.__context__)
-        self.assertIsNone(e.__cause__)
+        self.assertIs(e.__cause__, Ellipsis)
 
         e = TypeError()
         self.assertIsNone(e.__context__)
-        self.assertIsNone(e.__cause__)
+        self.assertIs(e.__cause__, Ellipsis)
 
         class MyException(EnvironmentError):
             pass
 
         e = MyException()
         self.assertIsNone(e.__context__)
-        self.assertIsNone(e.__cause__)
+        self.assertIs(e.__cause__, Ellipsis)
 
     def testChainingDescriptors(self):
         try:
@@ -408,16 +408,15 @@ class ExceptionTests(unittest.TestCase):
             e = exc
 
         self.assertIsNone(e.__context__)
-        self.assertIsNone(e.__cause__)
-        self.assertFalse(e.__suppress_context__)
+        self.assertIs(e.__cause__, Ellipsis)
 
         e.__context__ = NameError()
         e.__cause__ = None
         self.assertIsInstance(e.__context__, NameError)
         self.assertIsNone(e.__cause__)
-        self.assertTrue(e.__suppress_context__)
-        e.__suppress_context__ = False
-        self.assertFalse(e.__suppress_context__)
+
+        e.__cause__ = Ellipsis
+        self.assertIs(e.__cause__, Ellipsis)
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,

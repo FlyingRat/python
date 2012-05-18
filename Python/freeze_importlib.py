@@ -25,8 +25,6 @@ def main(input_path, output_path):
     with open(output_path, 'w', encoding='utf-8') as output_file:
         output_file.write('\n'.join(lines))
         output_file.write('/* Mercurial binary marker: \x00 */')
-        # Avoid a compiler warning for lack of EOL
-        output_file.write('\n')
 
 
 if __name__ == '__main__':
