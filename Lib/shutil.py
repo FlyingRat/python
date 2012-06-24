@@ -405,9 +405,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
     except os.error:
         onerror(os.rmdir, path, sys.exc_info())
 
-_use_fd_functions = (os.unlink in os.supports_dir_fd and
-                     os.open in os.supports_dir_fd)
-
+rmtree_is_safe = _use_fd_functions = (os.unlink in os.supports_dir_fd and
+                                      os.open in os.supports_dir_fd)
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.
 
@@ -450,9 +449,6 @@ def rmtree(path, ignore_errors=False, onerror=None):
     else:
         return _rmtree_unsafe(path, onerror)
 
-# Allow introspection of whether or not the hardening against symlink
-# attacks is supported on the current platform
-rmtree.avoids_symlink_attacks = _use_fd_functions
 
 def _basename(path):
     # A basename() variant which first strips the trailing slash, if present.
