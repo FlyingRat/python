@@ -590,13 +590,20 @@ class PyBuildExt(build_ext):
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
         readline_termcap_library = ""
         curses_library = ""
+        # Cannot use os.popen here in py3k.
+        tmpfile = os.path.join(self.build_temp, 'readline_termcap_lib')
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
         # Determine if readline is already linked against curses or tinfo.
-        if do_readline and find_executable('ldd'):
-            # Cannot use os.popen here in py3k.
-            tmpfile = os.path.join(self.build_temp, 'readline_termcap_lib')
-            if not os.path.exists(self.build_temp):
-                os.makedirs(self.build_temp)
-            ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
+        if do_readline:
+            if cross_compiling:
+                ret = os.system("%s -d %s | grep '(NEEDED)' > %s" \
+                                % (sysconfig.get_config_var('READELF'),
+                                   do_readline, tmpfile))
+            elif find_executable('ldd'):
+                ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
+            else:
+                ret = 256
             if ret >> 8 == 0:
                 with open(tmpfile) as fp:
                     for ln in fp:
@@ -1811,7 +1818,7 @@ class PyBuildExt(build_ext):
 
     def _decimal_ext(self):
         extra_compile_args = []
-        undef_macros = ['NDEBUG']
+        undef_macros=['NDEBUG']
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
             libraries = ['mpdec']
