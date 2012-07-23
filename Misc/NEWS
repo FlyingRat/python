@@ -98,9 +98,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #15232: when mangle_from is True, email.Generator now correctly mangles
-  lines that start with 'From' that occur in a MIME preamble or epilogue.
-
 - Issue #13922: argparse no longer incorrectly strips '--'s that appear
   after the first one.
 
@@ -426,6 +423,9 @@ Documentation
   and correctly list the argument names in the function's explanation.
 
 - Issue #14034: added the argparse tutorial.
+
+- Issue #15250: Document that filecmp.dircmp compares files shallowly. Patch
+  contributed by Chris Jerdonek.
 
 Tools/Demos
 -----------
