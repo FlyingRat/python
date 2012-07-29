@@ -10,15 +10,6 @@ What's New in Python 3.3.0 Beta 2?
 Core and Builtins
 -----------------
 
-- Issue #15508: Fix the docstring for __import__ to have the proper default
-  value of 0 for 'level' and to not mention negative levels since they are
-  not supported.
-
-- Issue #15425: Eliminated traceback noise from more situations involving
-  importlib
-
-- Issue #14578: Support modules registered in the Windows registry again.
-
 - Issue #15466: Stop using TYPE_INT64 in marshal, to make importlib.h
   (and other byte code files) equal between 32-bit and 64-bit systems.
 
@@ -71,9 +62,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #15463: the faulthandler module truncates strings to 500 characters,
-  instead of 100, to be able to display long file paths
 
 - Issue #6056: Make multiprocessing use setblocking(True) on the
   sockets it uses.  Original patch by J Derek Wilson.
@@ -225,6 +213,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15295: Reorganize and rewrite the documentation on the import
+  machinery.
+
 - Issue #15230: Clearly document some of the limitations of the runpy
   module and nudge readers towards importlib when appropriate.
 
@@ -244,9 +235,6 @@ Documentation
 
 Tests
 -----
-
-- Issue #15467: Move helpers for __sizeof__ tests into test_support.
-  Patch by Serhiy Storchaka.
 
 - Issue #15320: Make iterating the list of tests thread-safe when running
   tests in multiprocess mode. Patch by Chris Jerdonek.
@@ -271,10 +259,8 @@ Tests
 Build
 -----
 
-- Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
-
 - Issue #15431: Add _freeze_importlib project to regenerate importlib.h
-  on Windows. Patch by Kristj√°n Valur J√≥nsson.
+  on Windows. Patch by Kristj·n Valur JÛnsson.
 
 - Issue #14197: For OS X framework builds, ensure links to the shared
   library are created with the proper ABI suffix.
@@ -342,18 +328,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #9803: Don't close IDLE on saving if breakpoint is open.
-  Patch by Roger Serwy.
-
-- Issue #12288: Consider '0' and '0.0' as valid initialvalue
-  for tkinter SimpleDialog.
-
-- Issue #15489: Add a __sizeof__ implementation for BytesIO objects.
-  Patch by Serhiy Storchaka.
-
-- Issue #15487: Add a __sizeof__ implementation for buffered I/O objects.
-  Patch by Serhiy Storchaka.
 
 - Issue #15187: Bugfix: remove temporary directories test_shutil was leaving
   behind.
