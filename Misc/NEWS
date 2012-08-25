@@ -5,7 +5,7 @@ Python News
 What's New in Python 3.3.0 Release Candidate 1?
 ===============================================
 
-*Release date: XX-Aug-2012*
+*Release date: 25-Aug-2012*
 
 Core and Builtins
 -----------------
@@ -46,6 +46,8 @@ Library
   will be removed in Python 4.0.
 
 - Issue #15544: Fix Decimal.__float__ to work with payload-carrying NaNs.
+
+- Issue #15776: Allow pyvenv to work in existing directory with --clean.
 
 - Issue #15249: BytesGenerator now correctly mangles From lines (when
   requested) even if the body contains undecodable bytes.
