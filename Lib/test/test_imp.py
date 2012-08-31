@@ -211,9 +211,7 @@ class ImportTests(unittest.TestCase):
         # and importlib couldn't handle C extensions
         example = "_heapq"
         x = imp.find_module(example)
-        file_ = x[0]
-        if file_ is not None:
-            self.addCleanup(file_.close)
+        self.addCleanup(x[0].close)
         mod = imp.load_module(example, *x)
         self.assertEqual(mod.__name__, example)
 
