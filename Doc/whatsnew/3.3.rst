@@ -158,8 +158,9 @@ Features
 
 * Multi-dimensional comparisons are supported for any array type.
 
-* One-dimensional memoryviews of hashable (read-only) types with formats B,
-  b or c are now hashable. (Contributed by Antoine Pitrou in :issue:`13411`)
+* All array types are hashable if the exporting object is hashable
+  and the view is read-only. (Contributed by Antoine Pitrou in
+  :issue:`13411`)
 
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
   is now possible to reverse a memoryview in O(1) by using a negative step.
@@ -561,41 +562,6 @@ and :class:`inspect.BoundArguments` hold information about the call signatures,
 such as, annotations, default values, parameters kinds, and bound arguments,
 which considerably simplifies writing decorators and any code that validates
 or amends calling signatures or arguments.
-
-
-PEP 421: Adding sys.implementation
-==================================
-
-:pep:`421` - Adding sys.implementation
- PEP written and implemented by Eric Snow.
-
-A new attribute on the :mod:`sys` module exposes details specific to the
-implementation of the currently running interpreter.  The initial set of
-attributes on :attr:`sys.implementation` are ``name``, ``version``,
-``hexversion``, and ``cache_tag``.
-
-The intention of ``sys.implementation`` is to consolidate into one namespace
-the implementation-specific data used by the standard library.  This allows
-different Python implementations to share a single standard library code base
-much more easily.  In its initial state, ``sys.implementation`` holds only a
-small portion of the implementation-specific data.  Over time that ratio will
-shift in order to make the standard library more portable.
-
-One example of improved standard library portability is ``cache_tag``.  As of
-Python 3.3, ``sys.implementation.cache_tag`` is used by :mod:`importlib` to
-support :pep:`3147` compliance.  Any Python implementation that uses
-``importlib`` for its built-in import system may use ``cache_tag`` to control
-the caching behavior for modules.
-
-SimpleNamespace
----------------
-
-The implementation of ``sys.implementation`` also introduces a new type to
-Python: :class:`types.SimpleNamespace`.  In contrast to a mapping-based
-namespace, like :class:`dict`, ``SimpleNamespace`` is attribute-based, like
-:class:`object`.  However, unlike ``object``, ``SimpleNamespace`` instances
-are writable.  This means that you can add, remove, and modify the namespace
-through normal attribute access.
 
 
 .. _importlib:
@@ -1153,7 +1119,7 @@ at http://www.bytereef.org/mpdecimal/quickstart.html.
    +---------+-------------+--------------+-------------+
    |         |  decimal.py |   _decimal   |   speedup   |
    +=========+=============+==============+=============+
-   |   pi    |    42.02s   |    0.345s    |    120x     |
+   |   pi    |    42.02    |    0.345     |    120x     |
    +---------+-------------+--------------+-------------+
    | telco   |   172.19s   |    5.68s     |     30x     |
    +---------+-------------+--------------+-------------+
@@ -1222,10 +1188,6 @@ API changes
 
 * The order of arguments in the :class:`~decimal.Context` constructor has been
   changed to match the order displayed by :func:`repr`.
-
-
-* The ``watchexp`` parameter in the :meth:`~decimal.Decimal.quantize` method
-  is deprecated.
 
 
 ftplib
