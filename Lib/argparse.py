@@ -1725,7 +1725,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if action.dest is not SUPPRESS:
                 if not hasattr(namespace, action.dest):
                     if action.default is not SUPPRESS:
-                        setattr(namespace, action.dest, action.default)
+                        default = action.default
+                        if isinstance(action.default, str):
+                            default = self._get_value(action, default)
+                        setattr(namespace, action.dest, default)
 
         # add any parser defaults that aren't present
         for dest in self._defaults:
@@ -1948,24 +1951,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # if we didn't consume all the argument strings, there were extras
         extras.extend(arg_strings[stop_index:])
 
-        # make sure all required actions were present and also convert
-        # action defaults which were not given as arguments
-        required_actions = []
-        for action in self._actions:
-            if action not in seen_actions:
-                if action.required:
-                    required_actions.append(_get_action_name(action))
-                else:
-                    # Convert action default now instead of doing it before
-                    # parsing arguments to avoid calling convert functions
-                    # twice (which may fail) if the argument was given, but
-                    # only if it was defined already in the namespace
-                    if (action.default is not None and
-                        hasattr(namespace, action.dest) and
-                        action.default is getattr(namespace, action.dest)):
-                        setattr(namespace, action.dest,
-                                self._get_value(action, action.default))
-
+        # make sure all required actions were present
+        required_actions = [_get_action_name(action) for action in self._actions
+                            if action.required and action not in seen_actions]
         if required_actions:
             self.error(_('the following arguments are required: %s') %
                        ', '.join(required_actions))
