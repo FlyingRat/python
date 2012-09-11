@@ -159,7 +159,7 @@ extern "C" {
         const from_type *_end = (end);                  \
         Py_ssize_t n = (_end) - (_iter);                \
         const from_type *_unrolled_end =                \
-            _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
+            _iter + (n & ~ (Py_ssize_t) 3);             \
         while (_iter < (_unrolled_end)) {               \
             _to[0] = (to_type) _iter[0];                \
             _to[1] = (to_type) _iter[1];                \
@@ -4635,6 +4635,9 @@ PyUnicode_DecodeUTF8(const char *s,
 #include "stringlib/codecs.h"
 #include "stringlib/undef.h"
 
+/* Mask to check or force alignment of a pointer to C 'long' boundaries */
+#define LONG_PTR_MASK (size_t) (SIZEOF_LONG - 1)
+
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
 #if (SIZEOF_LONG == 8)
@@ -4649,11 +4652,11 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
+    const char *aligned_end = (const char *) ((size_t) end & ~LONG_PTR_MASK);
 
 #if SIZEOF_LONG <= SIZEOF_VOID_P
-    assert(_Py_IS_ALIGNED(dest, SIZEOF_LONG));
-    if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
+    assert(!((size_t) dest & LONG_PTR_MASK));
+    if (!((size_t) p & LONG_PTR_MASK)) {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help register allocation */
@@ -4679,7 +4682,7 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
+        if (!((size_t) p & LONG_PTR_MASK)) {
             /* Help register allocation */
             register const char *_p = p;
             while (_p < aligned_end) {
@@ -5387,7 +5390,7 @@ _PyUnicode_EncodeUTF16(PyObject *str,
         return NULL;
 
     /* output buffer is 2-bytes aligned */
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(v), 2));
+    assert(((Py_uintptr_t)PyBytes_AS_STRING(v) & 1) == 0);
     out = (unsigned short *)PyBytes_AS_STRING(v);
     if (byteorder == 0)
         *out++ = 0xFEFF;
@@ -7525,10 +7528,9 @@ Error:
             /* Apply mapping */
             if (PyLong_Check(x)) {
                 long value = PyLong_AS_LONG(x);
-                if (value < 0 || value > MAX_UNICODE) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "character mapping must be in range(0x%lx)",
-                                 (unsigned long)MAX_UNICODE + 1);
+                if (value < 0 || value > 65535) {
+                    PyErr_SetString(PyExc_TypeError,
+                                    "character mapping must be in range(65536)");
                     Py_DECREF(x);
                     goto onError;
                 }
@@ -9143,7 +9145,7 @@ tailmatch(PyObject *self,
             /* We do not need to compare 0 and len(substring)-1 because
                the if statement above ensured already that they are equal
                when we end up here. */
-            /* TODO: honor direction and do a forward or backwards search */
+            // TODO: honor direction and do a forward or backwards search
             for (i = 1; i < end_sub; ++i) {
                 if (PyUnicode_READ(kind_self, data_self, offset + i) !=
                     PyUnicode_READ(kind_sub, data_sub, i))
@@ -13235,10 +13237,8 @@ formatfloat(PyObject *v, int flags, int prec, int type,
         return -1;
     len = strlen(p);
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1) {
-            PyMem_Free(p);
+        if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
             return -1;
-        }
         unicode_write_cstr(writer->buffer, writer->pos, p, len);
         writer->pos += len;
     }
@@ -13460,7 +13460,8 @@ PyUnicode_Format(PyObject *format, PyObject *args)
         arglen = -1;
         argidx = -2;
     }
-    if (PyMapping_Check(args) && !PyTuple_Check(args) && !PyUnicode_Check(args))
+    if (Py_TYPE(args)->tp_as_mapping && !PyTuple_Check(args) &&
+        !PyUnicode_Check(args))
         dict = args;
 
     while (--fmtcnt >= 0) {
