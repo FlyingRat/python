@@ -414,14 +414,7 @@ win32_warn_bytes_api()
 
 
 #ifdef AT_FDCWD
-/*
- * Why the (int) cast?  Solaris 10 defines AT_FDCWD as 0xffd19553 (-3041965);
- * without the int cast, the value gets interpreted as uint (4291925331),
- * which doesn't play nicely with all the initializer lines in this file that
- * look like this:
- *      int dir_fd = DEFAULT_DIR_FD;
- */
-#define DEFAULT_DIR_FD (int)AT_FDCWD
+#define DEFAULT_DIR_FD AT_FDCWD
 #else
 #define DEFAULT_DIR_FD (-100)
 #endif
@@ -10495,7 +10488,7 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         static Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
-            /* ERANGE */
+            // ERANGE
             path_error("listxattr", &path);
             break;
         }
