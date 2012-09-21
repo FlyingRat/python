@@ -69,7 +69,6 @@ New library modules:
 * :mod:`faulthandler` (helps debugging low-level crashes)
 * :mod:`ipaddress` (high-level objects representing IP addresses and masks)
 * :mod:`lzma` (compress data using the XZ / LZMA algorithm)
-* :mod:`unittest.mock` (replace parts of your system under test with mock objects)
 * :mod:`venv` (Python :ref:`virtual environments <pep-405>`, as in the
   popular ``virtualenv`` package)
 
@@ -564,41 +563,6 @@ which considerably simplifies writing decorators and any code that validates
 or amends calling signatures or arguments.
 
 
-PEP 421: Adding sys.implementation
-==================================
-
-:pep:`421` - Adding sys.implementation
- PEP written and implemented by Eric Snow.
-
-A new attribute on the :mod:`sys` module exposes details specific to the
-implementation of the currently running interpreter.  The initial set of
-attributes on :attr:`sys.implementation` are ``name``, ``version``,
-``hexversion``, and ``cache_tag``.
-
-The intention of ``sys.implementation`` is to consolidate into one namespace
-the implementation-specific data used by the standard library.  This allows
-different Python implementations to share a single standard library code base
-much more easily.  In its initial state, ``sys.implementation`` holds only a
-small portion of the implementation-specific data.  Over time that ratio will
-shift in order to make the standard library more portable.
-
-One example of improved standard library portability is ``cache_tag``.  As of
-Python 3.3, ``sys.implementation.cache_tag`` is used by :mod:`importlib` to
-support :pep:`3147` compliance.  Any Python implementation that uses
-``importlib`` for its built-in import system may use ``cache_tag`` to control
-the caching behavior for modules.
-
-SimpleNamespace
----------------
-
-The implementation of ``sys.implementation`` also introduces a new type to
-Python: :class:`types.SimpleNamespace`.  In contrast to a mapping-based
-namespace, like :class:`dict`, ``SimpleNamespace`` is attribute-based, like
-:class:`object`.  However, unlike ``object``, ``SimpleNamespace`` instances
-are writable.  This means that you can add, remove, and modify the namespace
-through normal attribute access.
-
-
 .. _importlib:
 
 Using importlib as the Implementation of Import
@@ -924,7 +888,7 @@ New Modules
 faulthandler
 ------------
 
-This new debug module :mod:`faulthandler` contains functions to dump Python tracebacks explicitly,
+This new debug module contains functions to dump Python tracebacks explicitly,
 on a fault (a crash like a segmentation fault), after a timeout, or on a user
 signal. Call :func:`faulthandler.enable` to install fault handlers for the
 :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
@@ -1939,7 +1903,7 @@ Porting Python code
   updated to use the full name of the module instead of just the tail of the
   name.
 
-* The *index* argument to :func:`__import__` now defaults to 0 instead of -1
+* The **index** argument to :func:`__import__` now defaults to 0 instead of -1
   and no longer support negative values. It was an oversight when :pep:`328` was
   implemented that the default value remained -1. If you need to continue to
   perform a relative import followed by an absolute import, then perform the
@@ -2007,9 +1971,9 @@ Porting C code
 
 * :c:func:`PyImport_GetMagicNumber` now returns -1 upon failure.
 
-* As a negative value for the *level* argument to :func:`__import__` is no
+* As a negative value for the **level** argument to :func:`__import__` is no
   longer valid, the same now holds for :c:func:`PyImport_ImportModuleLevel`.
-  This also means that the value of *level* used by
+  This also means that the value of **level** used by
   :c:func:`PyImport_ImportModuleEx` is now 0 instead of -1.
 
 
