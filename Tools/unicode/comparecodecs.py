@@ -30,7 +30,7 @@ def compare_codecs(encoding1, encoding2):
             mismatch += 1
     # Check decoding
     for i in range(256):
-        c = bytes([i])
+        c = chr(i)
         try:
             u1 = c.decode(encoding1)
         except UnicodeError:
