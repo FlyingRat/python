@@ -313,17 +313,11 @@ class EnvBuilder:
                     mode = 'wb'
                 else:
                     mode = 'w'
-                    try:
-                        data = data.decode('utf-8')
-                        data = self.replace_variables(data, context)
-                    except UnicodeDecodeError as e:
-                        data = None
-                        logger.warning('unable to copy script %r, '
-                                       'may be binary: %s', srcfile, e)
-                if data is not None:
-                    with open(dstfile, mode) as f:
-                        f.write(data)
-                    shutil.copymode(srcfile, dstfile)
+                    data = data.decode('utf-8')
+                    data = self.replace_variables(data, context)
+                with open(dstfile, mode) as f:
+                    f.write(data)
+                shutil.copymode(srcfile, dstfile)
 
 
 def create(env_dir, system_site_packages=False, clear=False, symlinks=False):

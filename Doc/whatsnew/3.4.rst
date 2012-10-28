@@ -2,8 +2,8 @@
   What's New In Python 3.4
 ****************************
 
-.. :Author: Someone <email>
-   (uncomment if there is a principal author)
+:Release: |release|
+:Date: |today|
 
 .. Rules for maintenance:
 
