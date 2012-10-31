@@ -654,7 +654,7 @@ TESTFN_UNDECODABLE = None
 for name in (b'abc\xff', b'\xe7w\xf0'):
     try:
         os.fsdecode(name)
-    except UnicodeDecodeError:
+    except UnicodeDecodeErorr:
         TESTFN_UNDECODABLE = name
         break
 
