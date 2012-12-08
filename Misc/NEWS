@@ -10,10 +10,6 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
-- Issue #16602: When a weakref's target was part of a long deallocation
-  chain, the object could remain reachable through its weakref even though
-  its refcount had dropped to zero.
-
 - Issue #16416: On Mac OS X, operating system data are now always
   encoded/decoded to/from UTF-8/surrogateescape, instead of the locale encoding
   (which may be ASCII if no locale environment variable is set), to avoid
@@ -180,6 +176,9 @@ Library
 -------
 
 - Issue #16628: Fix a memory leak in ctypes.resize().
+
+- Issue #7719: Make distutils ignore ``.nfs*`` files instead of choking later
+  on.  Initial patch by SilentGhost and Jeff Ramnani.
 
 - Issue #13120: Allow to call pdb.set_trace() from thread.
   Patch by Ilya Sandler.
