@@ -9,10 +9,6 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
-- Issue #16602: When a weakref's target was part of a long deallocation
-  chain, the object could remain reachable through its weakref even though
-  its refcount had dropped to zero.
-
 - Issue #9011: Fix hacky AST code that modified the CST when compiling
   a negated numeric literal.
 
@@ -161,6 +157,9 @@ Library
 -------
 
 - Issue #16628: Fix a memory leak in ctypes.resize().
+
+- Issue #13614: Fix setup.py register failure with invalid rst in description.
+  Patch by Julien Courteau and Pierre Paul Lefebvre.
 
 - Issue #10182: The re module doesn't truncate indices to 32 bits anymore.
   Patch by Serhiy Storchaka.
