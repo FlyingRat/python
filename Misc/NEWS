@@ -202,6 +202,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11159: SAX parser now supports unicode file names.
+
 - Issue #6972: The zipfile module no longer overwrites files outside of
   its destination path when extracting malicious zip files.
 
@@ -865,9 +867,6 @@ Documentation
 
 - Issue #15250: Document that filecmp.dircmp compares files shallowly. Patch
   contributed by Chris Jerdonek.
-
-- Issue #15116: Remove references to appscript as it is no longer being
-  supported.
 
 
 What's New in Python 2.7.3 release candidate 2?
